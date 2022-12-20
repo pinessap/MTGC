@@ -14,9 +14,9 @@ namespace MTCG.Server
             _listener = new TcpListener(IPAddress.Any, 10001);
         }
 
-        public void Start()
+        public void Start() //listen for clients and accept their connection
         {
-            _listener.Start(5);
+            _listener.Start(5); //queue up to 5 connections
 
             while (true)
             {
@@ -24,9 +24,9 @@ namespace MTCG.Server
                 {
                     Console.WriteLine("Waiting for connection...");
 
-                    TcpClient client = _listener.AcceptTcpClient();
+                    TcpClient client = _listener.AcceptTcpClient(); //accept connection request
                     Console.WriteLine("Connected!");
-                    ThreadPool.QueueUserWorkItem(HandleClient, client);
+                    ThreadPool.QueueUserWorkItem(HandleClient, client); //execute method inside of a thread
 
                 }
                 catch (Exception e)
@@ -38,7 +38,7 @@ namespace MTCG.Server
 
         private void HandleClient(object obj)
         {
-
+            
         }
     }
 
