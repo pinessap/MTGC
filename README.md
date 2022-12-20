@@ -1,4 +1,4 @@
-# MTGC
+# MTGC | Ines Petrusic
 
 Time spent:
 
