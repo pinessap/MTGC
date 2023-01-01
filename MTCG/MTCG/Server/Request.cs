@@ -69,7 +69,6 @@ namespace MTCG.Server
             int bodyStartIdx = -1;
             string body = string.Empty;
 
-            Console.WriteLine("test1 " + tokens.Length);
             for (int i = 1; i < tokens.Length; i++)
             {
                 if (string.IsNullOrEmpty(tokens[i]) || tokens[i] == "\r")
@@ -78,8 +77,6 @@ namespace MTCG.Server
                     break;
                 }
                 
-                // Header keys are case-insensetive -> https://www.w3.org/Protocols/rfc2616/rfc2616-sec4.html#sec4.2
-                // Values are not!
                 string key = tokens[i].ToLower().Substring(0, tokens[i].IndexOf(':'));
                 string val = tokens[i].Substring(tokens[i].IndexOf(':') + 1).Trim();
                 headers.Add(key, val);

@@ -18,7 +18,7 @@ namespace MTCG.Server
         public void Start() //listen for clients and accept their connection
         {
             running = true;
-            listener.Start(5); //queue up to 5 connections
+            listener.Start(1); //queue up to 5 connections
 
             
             try {
@@ -56,9 +56,13 @@ namespace MTCG.Server
                 }
 
                 Request request = Request.GetRequest(message);
-                Console.WriteLine("Request START: \n" + request);
-                Console.WriteLine("END");
+                //Console.WriteLine("Request START: \n" + request);
+                //Console.WriteLine("END");
                 Response response = Response.GetResponse(request);
+                //Console.WriteLine("Response: " + response.Body);
+
+                StreamWriter writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
+                writer.Write(response.ResponseString());
 
                 client.Close();
 
