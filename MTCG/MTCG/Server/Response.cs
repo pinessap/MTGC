@@ -58,6 +58,7 @@ namespace MTCG.Server
             switch (request.Method)
             {
                 case "GET":
+                    //-------------------------------------- retrieves user data for given username -----------------------------------
                     if (request.Path.Contains("/users/"))
                     {
                         string username = request.Path.Substring(7);
@@ -83,12 +84,102 @@ namespace MTCG.Server
                             return new Response("404 Not Found", "application/json",
                                 "{\"msg\": \"error: User not found\"}\n");
                         }
-                        
-
+                    }
+                    //-------------------------------------- retrieves stats for individual user --------------------------------------
+                    else if (request.Path == "/stats")
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            string body = serverData.GetUserStats(GetUsernameFromToken(GetToken(request.Headers)));
+                            if (body != null)
+                            {
+                                return new Response("200 OK", "application/json", body + "\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+                    }
+                    //-------------------------------------- retrieves user scoreboard ordered by ELO ---------------------------------
+                    else if (request.Path == "/score")
+                    {
+                        if (!string.IsNullOrEmpty(GetToken(request.Headers)))
+                        {
+                            string body = serverData.GetScoreboard();
+                            if (body != null)
+                            {
+                                return new Response("200 OK", "application/json", body + "\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+                    }
+                    //-------------------------------------- show a user's cards ------------------------------------------------------
+                    else if (request.Path == "/cards")
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            string body = serverData.GetStack(GetUsernameFromToken(GetToken(request.Headers)));
+                            if (body != string.Empty && body != null)
+                            {
+                                return new Response("200 OK", "application/json", body + "\n");
+                            }
+                            else
+                            {
+                                return new Response("200 OK", "application/json",//used 200 instead of 204 because u can't send a body with 204
+                                    "{\"msg\": \"error: The request was fine, but the user doesn't have any cards\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
 
                     }
+                    //-------------------------------------- show the user's currently configured deck --------------------------------
+                    else if (request.Path == "/deck")
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            string body;
+                            if (request.QueryParameters.ContainsKey("format") &&
+                                request.QueryParameters["format"] == "plain")
+                            {
+                                body = serverData.GetDeck(GetUsernameFromToken(GetToken(request.Headers)),false);
+                            }
+                            else
+                            {
+                                body = serverData.GetDeck(GetUsernameFromToken(GetToken(request.Headers)), true);
+                            }
+                            //Console.WriteLine("body: " + body);
+                            //body = "test";
+                            if (body != string.Empty && body != null)
+                            {
+                                return new Response("200 OK", "application/json", body + "\n");
+                            }
+                            else
+                            {
+                                return new Response("200 OK", "application/json",  //used 200 instead of 204 because u can't send a body with 204
+                                    "{\"msg\": \"error: The request was fine, but the deck doesn't have any cards\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+
+                    }
+
                     break;
                 case "POST":
+                    //-------------------------------------- register a new user ------------------------------------------------------
                     if (request.Path == "/users")
                     {
                         if (serverData.RegisterUser(request.Body))
@@ -102,10 +193,11 @@ namespace MTCG.Server
                                 "{\"msg\": \"error: User with same username already registered\"}\n");
                         }
                     }
+                    //-------------------------------------- login with existing user -------------------------------------------------
                     else if (request.Path == "/sessions")
                     {
                         string token = serverData.GetToken(request.Body);
-                        if (token != String.Empty)
+                        if (token != string.Empty)
                         {
                             return new Response("200 OK", "application/json",
                                 token + "\n");
@@ -116,12 +208,70 @@ namespace MTCG.Server
                                 "{\"msg\": \"error: Invalid username/password provided\"}\n");
                         }
                     }
+                    //-------------------------------------- create new card packages (as admin) --------------------------------------
                     else if (request.Path == "/packages")
                     {
+                        if (!string.IsNullOrEmpty(GetToken(request.Headers)))
+                        {
+                            if (GetToken(request.Headers) == "admin-mtcgToken")
+                            {
+                                if (serverData.AddPackage(request.Body))
+                                {
+                                    return new Response("200 Created", "application/json",
+                                        "{\"msg\": \"Package and cards successfully created\"}\n");
+                                }
+                                else
+                                {
+                                    return new Response("409 Conflict", "application/json",
+                                        "{\"msg\": \"error: At least one card in the packages already exists\"}\n");
+                                }
+                            }
+                            else
+                            {
+                                return new Response("401 Unauthorized", "application/json",
+                                    "{\"msg\": \"error: Provided user is not \"admin\"\"}\n");
+                            }
+
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+                        
+                    }
+                    //-------------------------------------- acquire card package -----------------------------------------------------
+                    else if (request.Path == "/transactions/packages")
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            int result= serverData.BuyPackage(GetUsernameFromToken(GetToken(request.Headers)));
+                            if (result == 0)
+                            {
+                                return new Response("404 Not Found", "application/json",
+                                    "{\"msg\": \"error: No card package available for buying\"}\n");
+                            }
+                            else if(result == -1 )
+                            {
+                                return new Response("403 Forbidden", "application/json",
+                                    "{\"msg\": \"error: Not enough money for buying a card package\"}\n");
+                            } else if (result == 1)
+                            {
+                                return new Response("200 OK", "application/json",
+                                    "{\"msg\": \"A package has been successfully bought\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
 
                     }
+
                     break;
                 case "PUT":
+                    //-------------------------------------- updates user data for given username -------------------------------------
                     if (request.Path.Contains("/users/"))
                     {
                         string username = request.Path.Substring(7);
@@ -146,6 +296,32 @@ namespace MTCG.Server
                         {
                             return new Response("404 Not Found", "application/json",
                                 "{\"msg\": \"error: User not found\"}\n");
+                        }
+                    }
+                    if (request.Path.Contains("/deck"))
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            int result = serverData.ConfigureDeck(GetUsernameFromToken(GetToken(request.Headers)), request.Body);
+                            if (result == 0)
+                            {
+                                return new Response("200 OK", "application/json",
+                                    "{\"msg\": \"The deck has been successfully configured\"}\n");
+                            }
+                            else if (result == 1)
+                            {
+                                return new Response("400 Bad Request", "application/json",
+                                    "{\"msg\": \"error: The provided deck did not include the required amount of cards\"}\n");
+                            } else if (result == -1)
+                            {
+                                return new Response("400 Bad Request", "application/json",
+                                    "{\"msg\": \"error: At least one of the provided cards does not belong to the user or is not available.\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
                         }
                     }
 
@@ -183,6 +359,7 @@ namespace MTCG.Server
                 string[] content = headers["authorization"].Split(' ');
                 if (content.Length == 2)
                 {
+                    Console.WriteLine("token: " + content[1]);
                     return content[1];
                 }
             }
@@ -199,6 +376,19 @@ namespace MTCG.Server
             return tmp == username;
         }
 
-        
+        private static string GetUsernameFromToken(string token)
+        {
+            try
+            {
+                return token.Replace("-mtcgToken", string.Empty);
+            }
+            catch (Exception e)
+            {
+                return string.Empty;
+            }
+
+        }
+
+
     }
 }
