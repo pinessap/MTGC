@@ -19,6 +19,7 @@ namespace MTCG.User
         public int Elo { get; set; }
         public int Wins { get; set; }
         public int Losses { get; set; }
+        public int NumGames { get; set; }
         public Collection Stack { get; set; }
         public Collection Deck { get; set; }
 
@@ -36,6 +37,7 @@ namespace MTCG.User
             Elo = 100;
             Wins = 0;
             Losses = 0;
+            NumGames = 0;
             Stack = new Collection();
             Deck = new Collection();
         }
@@ -56,6 +58,25 @@ namespace MTCG.User
                 return false;
             }
             return Deck.AddCard(Stack.RemoveCard(id));
+        }
+
+        public void Draw()
+        {
+            NumGames++;
+        }
+
+        public void Win()
+        {
+            NumGames++;
+            Wins++;
+            Elo += 3;
+        }
+
+        public void Loss()
+        {
+            NumGames++;
+            Losses++;
+            Elo -= 5;
         }
 
     }

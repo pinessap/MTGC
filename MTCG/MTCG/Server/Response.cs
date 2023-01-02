@@ -176,6 +176,30 @@ namespace MTCG.Server
                         }
 
                     }
+                    //-------------------------------------- retrieves the currently available trading deals --------------------------
+                    else if (request.Path == "/tradings")
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            string body;
+                            body = serverData.GetTradings(GetUsernameFromToken(GetToken(request.Headers)));
+                            if (body != string.Empty && body != null)
+                            {
+                                return new Response("200 OK", "application/json", body + "\n");
+                            }
+                            else
+                            {
+                                return new Response("200 OK", "application/json",  //used 200 instead of 204 because u can't send a body with 204
+                                    "{\"msg\": \"error: The request was fine, but there are no trading deals available\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+
+                    }
 
                     break;
                 case "POST":
@@ -268,6 +292,100 @@ namespace MTCG.Server
                         }
 
                     }
+                    //-------------------------------------- creates new trading deal -------------------------------------------------
+                    else if (request.Path == "/tradings")
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            int response = serverData.CreateTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), request.Body);
+                            if (response == 0)
+                            {
+                                return new Response("200 OK", "application/json",
+                                    "{\"msg\": \"Trading deal successfully created\"}\n");
+                            }
+                            else if (response == -1)
+                            {
+                                return new Response("409 Conflict", "application/json",  
+                                    "{\"msg\": \"error: A deal with this deal ID already exists\"}\n");
+                            } else if (response == -2)
+                            {
+                                return new Response("403 Forbidden", "application/json",
+                                    "{\"msg\": \"error: \"The deal contains a card that is not owned by the user or locked in the deck\"}\n");
+                            }
+                            else
+                            {
+                                return new Response("409 Conflict", "application/json",
+                                    "{\"msg\": \"error: Another error occured\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+
+                    }
+                    //-------------------------------------- carry out a trade for the deal with the provided card --------------------
+                    if (request.Path.Contains("/tradings/"))
+                    {
+                        string tradeID = request.Path.Substring(10);
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            int response = serverData.TradeCard(GetUsernameFromToken(GetToken(request.Headers)), tradeID, request.Body);
+                            if (response == 0)
+                            {
+                                return new Response("200 OK", "application/json",
+                                    "{\"msg\": \"Trading deal successfully executed\"}\n");
+                            }
+                            else if (response == -1)
+                            {
+                                return new Response("403 Forbidden", "application/json",
+                                    "{\"msg\": \"error: \"The offered card is not owned by the user, " +
+                                                "or the requirements are not met (Type, MinimumDamage), " +
+                                                "or the offered card is locked in the deck.\"}\n");
+                            }
+                            else if (response == -2)
+                            {
+                                return new Response("404 Not Found", "application/json",
+                                    "{\"msg\": \"error: \"The provided deal ID was not found.\"}\n");
+                            }
+                            else
+                            {
+                                return new Response("409 Conflict", "application/json",
+                                    "{\"msg\": \"error: Another error occured\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+
+                    }
+                    //-------------------------------------- enters the lobby to start a battle ---------------------------------------
+                    else if (request.Path == "/battles")
+                    {
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            bool response = serverData.CreateTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), request.Body);
+                            if (response)
+                            {
+                                return new Response("200 OK", "application/json",
+                                    "{\"msg\": \"The battle has been carried out successfully\"}\n");
+                            }
+                            else 
+                            {
+                                return new Response("409 Conflict", "application/json",
+                                    "{\"msg\": \"error: Another error occured\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+
+                    }
 
                     break;
                 case "PUT":
@@ -298,6 +416,7 @@ namespace MTCG.Server
                                 "{\"msg\": \"error: User not found\"}\n");
                         }
                     }
+                    //-------------------------------------- configures the deck with four provided cards -----------------------------
                     if (request.Path.Contains("/deck"))
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
@@ -323,6 +442,45 @@ namespace MTCG.Server
                             return new Response("401 Unauthorized", "application/json",
                                 "{\"msg\": \"error: Access token is missing or invalid\"}\n");
                         }
+                    }
+
+                    break;
+                case "DELETE":
+                    //-------------------------------------- creates new trading deal -------------------------------------------------
+                    if (request.Path.Contains("/tradings/"))
+                    {
+                        string tradeID = request.Path.Substring(10);
+                        Console.WriteLine("DELETE ID: " + tradeID);
+                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        {
+                            int response = serverData.DeleteTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), tradeID);
+                            if (response == 0)
+                            {
+                                return new Response("200 OK", "application/json",
+                                    "{\"msg\": \"Trading deal successfully deleted\"}\n");
+                            }
+                            else if (response == -1)
+                            {
+                                return new Response("403 Forbidden", "application/json",
+                                    "{\"msg\": \"error: \"The deal contains a card that is not owned by the user\"}\n");
+                            }
+                            else if (response == -2)
+                            {
+                                return new Response("404 Not Found", "application/json",
+                                    "{\"msg\": \"error: \"The provided deal ID was not found.\"}\n");
+                            }
+                            else
+                            {
+                                return new Response("409 Conflict", "application/json",
+                                    "{\"msg\": \"error: Another error occured\"}\n");
+                            }
+                        }
+                        else
+                        {
+                            return new Response("401 Unauthorized", "application/json",
+                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                        }
+
                     }
 
                     break;

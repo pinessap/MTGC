@@ -62,16 +62,14 @@ namespace MTCG.Server
                 //Console.WriteLine("Response: " + response.Body);
 
                 StreamWriter writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
-                Console.WriteLine("server response");
                 writer.Write(response.ResponseString());
-                Console.WriteLine("server response2");
 
                 client.Close();
 
 
             } catch (Exception e)
             {
-                Console.WriteLine("\nerror SERVER: " + e.Message);
+                Console.WriteLine("\nSERVER error: " + e.Message);
                 client.Close();
             }
 
