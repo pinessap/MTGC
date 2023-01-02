@@ -79,5 +79,21 @@ namespace MTCG.User
             Elo -= 5;
         }
 
+        public Card ChooseRndCard()
+        {
+            Random random = new Random();
+            int index = random.Next(Deck.cards.Count());
+            Card card = Deck.cards.Values.ElementAt(index);
+            return card;
+        }
+
+        public bool IsDeckEmpty()
+        {
+            if (Deck.cards.IsEmpty || Deck.cards.Count() == 0 || !Deck.cards.Any())
+            {
+                return true;
+            }
+            return false;
+        }
     }
 }

@@ -367,7 +367,7 @@ namespace MTCG.Server
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            bool response = serverData.CreateTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), request.Body);
+                            bool response = serverData.QueueBattle(GetUsernameFromToken(GetToken(request.Headers)));
                             if (response)
                             {
                                 return new Response("200 OK", "application/json",

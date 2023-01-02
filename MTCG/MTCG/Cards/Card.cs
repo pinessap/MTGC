@@ -12,7 +12,7 @@ namespace MTCG.Cards
         public Guid Id { get; }
         public string Name { get; }
         public double Damage { get; }
-        Element Element { get; }
+        public Element Element { get; }
 
         public Card(string name, double damage, Element element, string id)
         {

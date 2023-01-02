@@ -391,7 +391,6 @@ namespace MTCG.Server
             }
 
         }
-
         public int TradeCard(string username, string tradeID, string jsonBody)
         {
             string offeredCard = JsonConvert.DeserializeObject<string>(jsonBody);
@@ -443,14 +442,12 @@ namespace MTCG.Server
 
                 if (!tradingDeals.TryRemove(tradeID, out Trading outTrade) || outTrade == null)
                 {
-                    Console.WriteLine("\n first test\n");
                     return -3;
                 }
 
                 Card cardOffered = users[username].Stack.RemoveCard(offeredCard);
                 if (cardOffered == null)
                 {
-                    Console.WriteLine("\n second test\n");
                     tradingDeals.TryAdd(tradeID, tmpTrade);
                     return -3;
                 }
@@ -465,11 +462,9 @@ namespace MTCG.Server
 
                 if (users[username].Stack.AddCard(tmpTrade.CardToTrade) && users[tmpTrade.Owner].Stack.AddCard(cardOffered))
                 {
-                    Console.WriteLine("\n fourth test\n");
                     return 0;
                 }
                 tradingDeals.TryAdd(tradeID, tmpTrade);
-                Console.WriteLine("\n fifth test\n");
                 Console.WriteLine("adding cards failed\n");
                 return -3;
             }
@@ -479,6 +474,10 @@ namespace MTCG.Server
                 return -3;
             }
 
+        }
+        public bool QueueBattle(string username)
+        {
+            
         }
     }
 }
