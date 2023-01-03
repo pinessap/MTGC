@@ -15,11 +15,22 @@ namespace MTCG.User
         private User player2;
         private int roundCount = 0;
         public bool hasStarted = false;
-
+        private List<string> p1CardIDs;
+        private List<string> p2CardIDs;
         public Battle(User u1, User u2) // constructor
         {
             player1 = u1;
             player2 = u2;
+            p1CardIDs = new List<string>();
+            p2CardIDs = new List<string>();
+            foreach (KeyValuePair<string, Card> entry in player1.Deck.cards)
+            {
+                p1CardIDs.Add(entry.Key);
+            }
+            foreach (KeyValuePair<string, Card> entry in player2.Deck.cards)
+            {
+                p2CardIDs.Add(entry.Key);
+            }
         }
 
         
@@ -93,7 +104,7 @@ namespace MTCG.User
             return 0;
         }
 
-        public int CardsBattle(Card card1, Card card2) //determine winner between two cards
+        private int CardsBattle(Card card1, Card card2) //determine winner between two cards
         {
             bool pureMoFi = CheckPureMonsterFight(card1, card2);
             int specialFight = CheckSpecialties(card1.Name, card2.Name);
@@ -164,13 +175,37 @@ namespace MTCG.User
             }
         }
 
+        private void resetDecks(Collection deck1, Collection deck2)
+        {
+            //check if deck1 has cards from deck2
+            foreach (KeyValuePair<string, Card> entry in player1.Deck.cards)
+            {
+                if (p2CardIDs.Contains(entry.Key))
+                {
+                    MoveCardFromTo(deck1, deck2, entry.Key);
+                }
+            }
+
+            //check if deck2 has cards from deck1
+            foreach (KeyValuePair<string, Card> entry in player2.Deck.cards)
+            {
+                if (p1CardIDs.Contains(entry.Key))
+                {
+                    MoveCardFromTo(deck2, deck1, entry.Key);
+                }
+            }
+
+            Console.WriteLine("Deck1 count: " + player1.Deck.cards.Count());
+            Console.WriteLine("Deck2 count: " + player2.Deck.cards.Count());
+        }
+
         public string StartBattle() //start battle between two players
         {
             hasStarted = true;
             Console.WriteLine("\n\n---------- START GAME ----------\n");
             string log = "---------- START GAME ----------\n";
 
-            while (roundCount <= 100) //game takes place for max. 100 rounds
+            while (roundCount < 100) //game takes place for max. 100 rounds
             {
                 //check at start of every round whether one deck is empty (check winning condition)
                 if (player1.IsDeckEmpty())
@@ -179,6 +214,7 @@ namespace MTCG.User
                     Console.WriteLine("\n---------- PLAYER 2 WON ----------\n");
                     player2.Win();
                     player1.Loss();
+                    resetDecks(player1.Deck, player2.Deck);
                     return log;
                 }
                 if (player2.IsDeckEmpty())
@@ -187,6 +223,7 @@ namespace MTCG.User
                     Console.WriteLine("\n---------- PLAYER 1 WON ----------\n");
                     player1.Win();
                     player2.Loss();
+                    resetDecks(player1.Deck, player2.Deck);
                     return log;
                 }
 
@@ -233,6 +270,7 @@ namespace MTCG.User
             Console.WriteLine("---------- GAME ENDED IN A DRAW ----------\n");
             player1.Draw();
             player2.Draw();
+            resetDecks(player1.Deck, player2.Deck);
             return log;
         }
     }
