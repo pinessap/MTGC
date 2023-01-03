@@ -10,22 +10,20 @@ namespace MTCG.Server
         private bool running = false;
         private TcpListener listener;
 
-        public Server(int port)
+        public Server(int port) // constructor
         {
-            listener = new TcpListener(IPAddress.Any, port);
+            listener = new TcpListener(IPAddress.Any, port); //instance of TcpListener
         }
 
         public void Start() //listen for clients and accept their connection
         {
             running = true;
-            listener.Start(1); //queue up to 5 connections
+            listener.Start(5); //queue up to 5 connections
 
-            
             try {
                 while (running)
                 {
                     Console.WriteLine("Waiting for connection...");
-
                     TcpClient client = listener.AcceptTcpClient(); //accept connection request
                     Console.WriteLine("Connected!");
                     ThreadPool.QueueUserWorkItem(HandleClient, client); //execute method inside of a thread
@@ -39,33 +37,28 @@ namespace MTCG.Server
 
             running = false;
             listener.Stop();
-
         }
 
-        private void HandleClient(object obj)
+        private void HandleClient(object obj) //get requests from client and send responses bacl
         {
-            TcpClient client = (TcpClient) obj;
-            StreamReader reader = new StreamReader(client.GetStream());
+            TcpClient client = (TcpClient) obj; //cast object to TcpClient
+            StreamReader reader = new StreamReader(client.GetStream()); //reads characters from stream
             string message = "";
 
             try
             {
-                while (reader.Peek() != -1)
+                while (reader.Peek() != -1) //check if there are still characters left
                 {
-                    message += (char)reader.Read();
+                    message += (char)reader.Read(); //read character from stream and cast into char
                 }
 
-                Request request = Request.GetRequest(message);
-                //Console.WriteLine("Request START: \n" + request);
-                //Console.WriteLine("END");
-                Response response = Response.GetResponse(request);
-                //Console.WriteLine("Response: " + response.Body);
+                Request request = Request.GetRequest(message);      //get request
+                Response response = Response.GetResponse(request);  //get fitting response for request
 
-                StreamWriter writer = new StreamWriter(client.GetStream()) { AutoFlush = true };
-                writer.Write(response.ResponseString());
+                StreamWriter writer = new StreamWriter(client.GetStream()) { AutoFlush = true }; //writes characters to stream (flushes its buffer to stream)
+                writer.Write(response.ResponseString()); //write string to stream
 
                 client.Close();
-
 
             } catch (Exception e)
             {

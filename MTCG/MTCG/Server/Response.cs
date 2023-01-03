@@ -13,8 +13,8 @@ namespace MTCG.Server
         public string Body { get; private set; }
         public string Status { get; private set; }
         public Dictionary<string, string> Headers { get; private set; }
-        
-        private Response(string status, string contentType, string body)
+
+        private Response(string status, string contentType, string body) // Constructor (set status, body, headers of response) 
         {
             Status = status;
             Body = body;
@@ -25,64 +25,73 @@ namespace MTCG.Server
             };
         }
 
-        private static Response NullResponse(bool json = false)
-        {
-            if (json)
-            {
-                return new Response("400 Bad Request", "application/json", "{\"msg\": \"error: bad request\"}\n");
-            }
-
-            return new Response("400 Bad Request", "text/plain", "error: bad request\n");
+        private static Response NullResponse() // for a request == null 
+        { 
+            return new Response("400 Bad Request", "application/json", 
+                "{\"msg\": \"error: bad request\"}\n");
         }
 
-        private static Response MethodNotAllowedResponse(bool json = false)
-        {
-            if (json)
-            {
-                return new Response("405 Method Not Allowed", "application/json",
-                    "{\"msg\": \"error: method not allowed\"}\n");
-            }
-
-            return new Response("405 Method Not Allowed", "text/plain", "error: method not allowed\n");
+        private static Response MethodNotAllowedResponse() // if Method != (get, post, put, delete) 
+        { 
+            return new Response("405 Method Not Allowed", "application/json", 
+                "{\"msg\": \"error: method not allowed\"}\n");
         }
 
-        public static Response GetResponse(Request request)
+        private static Response AccessTokenInvalid() // if token missing or invalid 
         {
-            if (request == null)
+            return new Response("401 Unauthorized", "application/json",
+                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+        }
+
+        private static Response OtherError() // if some other (not specifically defined) error occured 
+        {
+            return new Response("409 Conflict", "application/json",  
+                "{\"msg\": \"error: another error occured\"}\n");
+        }
+
+        
+        //-------------------------------------------------------- RESPONSE HANDLER ----------------------------------------------------------------------------------------     
+        public static Response GetResponse(Request request) 
+        {
+            if (request == null) //check first if request null
             {
                 return NullResponse();
             }
 
-            Data serverData = Data.ServerData;
+            ServerMethods serverData = ServerMethods.ServerData;
 
             switch (request.Method)
             {
+                //----------------------- GET METHOD --------------------------------------------------------------------------------------------   
                 case "GET":
                     //-------------------------------------- retrieves user data for given username -----------------------------------
                     if (request.Path.Contains("/users/"))
                     {
-                        string username = request.Path.Substring(7);
+                        string username = request.Path.Substring(7); //get username from path
                         if (!string.IsNullOrEmpty(username))
                         {
                            // Console.WriteLine("username retrieved: " + username);
-                            if (!string.IsNullOrEmpty(GetToken(request.Headers)) && CheckToken(GetToken(request.Headers),username))
+                            if (!string.IsNullOrEmpty(GetToken(request.Headers)) && CheckToken(GetToken(request.Headers),username)) //check if token matches or is admin
                             {
-                                string body = serverData.GetUserData(username, GetToken(request.Headers));
+                                string body = serverData.GetUserData(username, GetToken(request.Headers)); //get user data
                                 if (body != null)
                                 {
                                     return new Response("200 OK", "application/json", body + "\n");
                                 }
+                                else
+                                {
+                                    return new Response("404 Not Found", "application/json",
+                                        "{\"msg\": \"error: User not found\"}\n");
+                                }
                             }
                             else
                             {
-                                return new Response("401 Unauthorized", "application/json",
-                                    "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                                return AccessTokenInvalid();
                             }
                         }
                         else
                         {
-                            return new Response("404 Not Found", "application/json",
-                                "{\"msg\": \"error: User not found\"}\n");
+                            return NullResponse();
                         }
                     }
                     //-------------------------------------- retrieves stats for individual user --------------------------------------
@@ -90,7 +99,7 @@ namespace MTCG.Server
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            string body = serverData.GetUserStats(GetUsernameFromToken(GetToken(request.Headers)));
+                            string body = serverData.GetUserStats(GetUsernameFromToken(GetToken(request.Headers))); // get stats
                             if (body != null)
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
@@ -98,8 +107,7 @@ namespace MTCG.Server
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
                     }
                     //-------------------------------------- retrieves user scoreboard ordered by ELO ---------------------------------
@@ -107,7 +115,7 @@ namespace MTCG.Server
                     {
                         if (!string.IsNullOrEmpty(GetToken(request.Headers)))
                         {
-                            string body = serverData.GetScoreboard();
+                            string body = serverData.GetScoreboard(); //get scoreboard
                             if (body != null)
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
@@ -115,8 +123,7 @@ namespace MTCG.Server
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
                     }
                     //-------------------------------------- show a user's cards ------------------------------------------------------
@@ -124,23 +131,21 @@ namespace MTCG.Server
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            string body = serverData.GetStack(GetUsernameFromToken(GetToken(request.Headers)));
+                            string body = serverData.GetStack(GetUsernameFromToken(GetToken(request.Headers))); //get stack
                             if (body != string.Empty && body != null)
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
                             }
                             else
                             {
-                                return new Response("200 OK", "application/json",//used 200 instead of 204 because u can't send a body with 204
+                                return new Response("200 OK", "application/json", //used 200 instead of 204 because u can't send a body with 204
                                     "{\"msg\": \"error: The request was fine, but the user doesn't have any cards\"}\n");
                             }
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-
                     }
                     //-------------------------------------- show the user's currently configured deck --------------------------------
                     else if (request.Path == "/deck")
@@ -148,17 +153,15 @@ namespace MTCG.Server
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
                             string body;
-                            if (request.QueryParameters.ContainsKey("format") &&
+                            if (request.QueryParameters.ContainsKey("format") &&    //check if plain format is requested
                                 request.QueryParameters["format"] == "plain")
                             {
-                                body = serverData.GetDeck(GetUsernameFromToken(GetToken(request.Headers)),false);
+                                body = serverData.GetDeck(GetUsernameFromToken(GetToken(request.Headers)), false);  //get Deck as simple string 
                             }
                             else
                             {
-                                body = serverData.GetDeck(GetUsernameFromToken(GetToken(request.Headers)), true);
+                                body = serverData.GetDeck(GetUsernameFromToken(GetToken(request.Headers)), true);  //get Deck in json format
                             }
-                            //Console.WriteLine("body: " + body);
-                            //body = "test";
                             if (body != string.Empty && body != null)
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
@@ -171,10 +174,8 @@ namespace MTCG.Server
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-
                     }
                     //-------------------------------------- retrieves the currently available trading deals --------------------------
                     else if (request.Path == "/tradings")
@@ -182,7 +183,7 @@ namespace MTCG.Server
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
                             string body;
-                            body = serverData.GetTradings(GetUsernameFromToken(GetToken(request.Headers)));
+                            body = serverData.GetTradings(GetUsernameFromToken(GetToken(request.Headers))); //get trading deals
                             if (body != string.Empty && body != null)
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
@@ -195,18 +196,17 @@ namespace MTCG.Server
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-
                     }
-
                     break;
+
+                //----------------------- POST METHOD ------------------------------------------------------------------------------------------- 
                 case "POST":
                     //-------------------------------------- register a new user ------------------------------------------------------
                     if (request.Path == "/users")
                     {
-                        if (serverData.RegisterUser(request.Body))
+                        if (serverData.RegisterUser(request.Body)) //register user
                         {
                             return new Response("201 Created", "application/json",
                                 "{\"msg\": \"User successfully created\"}\n");
@@ -220,11 +220,10 @@ namespace MTCG.Server
                     //-------------------------------------- login with existing user -------------------------------------------------
                     else if (request.Path == "/sessions")
                     {
-                        string token = serverData.GetToken(request.Body);
+                        string token = serverData.GetToken(request.Body); //after successful login token will be sent to client
                         if (token != string.Empty)
                         {
-                            return new Response("200 OK", "application/json",
-                                token + "\n");
+                            return new Response("200 OK", "application/json", token + "\n");
                         }
                         else
                         {
@@ -237,9 +236,9 @@ namespace MTCG.Server
                     {
                         if (!string.IsNullOrEmpty(GetToken(request.Headers)))
                         {
-                            if (GetToken(request.Headers) == "admin-mtcgToken")
+                            if (GetToken(request.Headers) == "admin-mtcgToken") //check if token is admin's
                             {
-                                if (serverData.AddPackage(request.Body))
+                                if (serverData.AddPackage(request.Body)) //add packages
                                 {
                                     return new Response("200 Created", "application/json",
                                         "{\"msg\": \"Package and cards successfully created\"}\n");
@@ -255,40 +254,37 @@ namespace MTCG.Server
                                 return new Response("401 Unauthorized", "application/json",
                                     "{\"msg\": \"error: Provided user is not \"admin\"\"}\n");
                             }
-
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-                        
                     }
                     //-------------------------------------- acquire card package -----------------------------------------------------
                     else if (request.Path == "/transactions/packages")
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            int result= serverData.BuyPackage(GetUsernameFromToken(GetToken(request.Headers)));
+                            int result= serverData.BuyPackage(GetUsernameFromToken(GetToken(request.Headers))); //buy packages
                             if (result == 0)
                             {
                                 return new Response("404 Not Found", "application/json",
-                                    "{\"msg\": \"error: No card package available for buying\"}\n");
+                                    "{\"msg\": \"error: no card package available for buying\"}\n");
                             }
                             else if(result == -1 )
                             {
                                 return new Response("403 Forbidden", "application/json",
-                                    "{\"msg\": \"error: Not enough money for buying a card package\"}\n");
-                            } else if (result == 1)
+                                    "{\"msg\": \"error: not enough money for buying a card package\"}\n");
+                            } 
+                            else if (result == 1)
                             {
                                 return new Response("200 OK", "application/json",
-                                    "{\"msg\": \"A package has been successfully bought\"}\n");
+                                    "{\"msg\": \"a package has been successfully bought\"}\n");
                             }
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
 
                     }
@@ -297,41 +293,35 @@ namespace MTCG.Server
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            int response = serverData.CreateTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), request.Body);
+                            int response = serverData.CreateTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), request.Body); //create trading deal
                             if (response == 0)
                             {
                                 return new Response("200 OK", "application/json",
-                                    "{\"msg\": \"Trading deal successfully created\"}\n");
+                                    "{\"msg\": \"trading deal successfully created\"}\n");
                             }
                             else if (response == -1)
                             {
                                 return new Response("409 Conflict", "application/json",  
-                                    "{\"msg\": \"error: A deal with this deal ID already exists\"}\n");
-                            } else if (response == -2)
+                                    "{\"msg\": \"error: a deal with this deal ID already exists\"}\n");
+                            } 
+                            else if (response == -2)
                             {
                                 return new Response("403 Forbidden", "application/json",
-                                    "{\"msg\": \"error: \"The deal contains a card that is not owned by the user or locked in the deck\"}\n");
-                            }
-                            else
-                            {
-                                return new Response("409 Conflict", "application/json",
-                                    "{\"msg\": \"error: Another error occured\"}\n");
+                                    "{\"msg\": \"error: \"the deal contains a card that is not owned by the user or locked in the deck\"}\n");
                             }
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-
                     }
                     //-------------------------------------- carry out a trade for the deal with the provided card --------------------
                     if (request.Path.Contains("/tradings/"))
                     {
-                        string tradeID = request.Path.Substring(10);
+                        string tradeID = request.Path.Substring(10); //get trading deal id from path
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            int response = serverData.TradeCard(GetUsernameFromToken(GetToken(request.Headers)), tradeID, request.Body);
+                            int response = serverData.TradeCard(GetUsernameFromToken(GetToken(request.Headers)), tradeID, request.Body); //carry out deal
                             if (response == 0)
                             {
                                 return new Response("200 OK", "application/json",
@@ -341,7 +331,7 @@ namespace MTCG.Server
                             {
                                 return new Response("403 Forbidden", "application/json",
                                     "{\"msg\": \"error: \"The offered card is not owned by the user, " +
-                                                "or the requirements are not met (Type, MinimumDamage), " +
+                                    "or the requirements are not met (Type, MinimumDamage), " +
                                                 "or the offered card is locked in the deck.\"}\n");
                             }
                             else if (response == -2)
@@ -349,79 +339,67 @@ namespace MTCG.Server
                                 return new Response("404 Not Found", "application/json",
                                     "{\"msg\": \"error: \"The provided deal ID was not found.\"}\n");
                             }
-                            else
-                            {
-                                return new Response("409 Conflict", "application/json",
-                                    "{\"msg\": \"error: Another error occured\"}\n");
-                            }
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-
                     }
                     //-------------------------------------- enters the lobby to start a battle ---------------------------------------
                     else if (request.Path == "/battles")
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            bool response = serverData.QueueBattle(GetUsernameFromToken(GetToken(request.Headers)));
-                            if (response)
+                            string response = serverData.QueueBattle(GetUsernameFromToken(GetToken(request.Headers))); //queue for a battle (and start battle if opponent available) 
+                            if (!string.IsNullOrEmpty(response))
                             {
-                                return new Response("200 OK", "application/json",
-                                    "{\"msg\": \"The battle has been carried out successfully\"}\n");
-                            }
-                            else 
-                            {
-                                return new Response("409 Conflict", "application/json",
-                                    "{\"msg\": \"error: Another error occured\"}\n");
+                                return new Response("200 OK", "application/json", response + "\n");
                             }
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-
                     }
-
                     break;
+
+                //----------------------- PUT METHOD -------------------------------------------------------------------------------------------- 
                 case "PUT":
                     //-------------------------------------- updates user data for given username -------------------------------------
                     if (request.Path.Contains("/users/"))
                     {
-                        string username = request.Path.Substring(7);
+                        string username = request.Path.Substring(7); //get username from path
                         if (!string.IsNullOrEmpty(username))
                         {
                             if (!string.IsNullOrEmpty(GetToken(request.Headers)) && CheckToken(GetToken(request.Headers), username))
                             {
-                                //string body = serverData.GetUserData(username, GetToken(request.Headers));
-                                if (serverData.UpdateUserData(username, request.Body))
+                                if (serverData.UpdateUserData(username, request.Body)) //update data
                                 {
                                     return new Response("200 OK", "application/json",
                                         "{\"msg\": \"User sucessfully updated\"}\n");
                                 }
+                                else
+                                {
+                                    return new Response("404 Not Found", "application/json",
+                                        "{\"msg\": \"error: User not found\"}\n");
+                                }
                             }
                             else
                             {
-                                return new Response("401 Unauthorized", "application/json",
-                                    "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                                return AccessTokenInvalid();
                             }
                         }
                         else
                         {
-                            return new Response("404 Not Found", "application/json",
-                                "{\"msg\": \"error: User not found\"}\n");
+                            return NullResponse();
                         }
                     }
                     //-------------------------------------- configures the deck with four provided cards -----------------------------
-                    if (request.Path.Contains("/deck"))
+                    if (request.Path == "/deck")
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            int result = serverData.ConfigureDeck(GetUsernameFromToken(GetToken(request.Headers)), request.Body);
+                            int result = serverData.ConfigureDeck(GetUsernameFromToken(GetToken(request.Headers)), request.Body); //put deck together
                             if (result == 0)
                             {
                                 return new Response("200 OK", "application/json",
@@ -439,21 +417,21 @@ namespace MTCG.Server
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
                     }
-
                     break;
+
+                //----------------------- DELETE METHOD -----------------------------------------------------------------------------------------
                 case "DELETE":
                     //-------------------------------------- creates new trading deal -------------------------------------------------
                     if (request.Path.Contains("/tradings/"))
                     {
-                        string tradeID = request.Path.Substring(10);
-                        Console.WriteLine("DELETE ID: " + tradeID);
+                        string tradeID = request.Path.Substring(10); //get trading deal id from path
+                        //Console.WriteLine("DELETE ID: " + tradeID);
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            int response = serverData.DeleteTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), tradeID);
+                            int response = serverData.DeleteTradingDeal(GetUsernameFromToken(GetToken(request.Headers)), tradeID); //delete trading deal
                             if (response == 0)
                             {
                                 return new Response("200 OK", "application/json",
@@ -469,33 +447,23 @@ namespace MTCG.Server
                                 return new Response("404 Not Found", "application/json",
                                     "{\"msg\": \"error: \"The provided deal ID was not found.\"}\n");
                             }
-                            else
-                            {
-                                return new Response("409 Conflict", "application/json",
-                                    "{\"msg\": \"error: Another error occured\"}\n");
-                            }
                         }
                         else
                         {
-                            return new Response("401 Unauthorized", "application/json",
-                                "{\"msg\": \"error: Access token is missing or invalid\"}\n");
+                            return AccessTokenInvalid();
                         }
-
                     }
-
                     break;
 
-
+                //----------------------- DEFAULT ----------------------------------------------------------------------------------------------- 
                 default:
                     return MethodNotAllowedResponse();
-
-
             }
-
-            return null;
+            return OtherError();
         }
-
-        public string ResponseString()
+        //------------------------------------------------------------------------------------------------------------------------------------------------------------------
+        
+        public string ResponseString() // build the response string (to send to client)
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("HTTP/1.1 " + Status);
@@ -509,32 +477,32 @@ namespace MTCG.Server
             return sb.ToString();
         }
 
-        private static string GetToken(Dictionary<string, string> headers)
+        private static string GetToken(Dictionary<string, string> headers) // get token from request headers 
         {
-            //--header "Authorization: Basic kienboec-mtcgToken"
+            //Format: --header "Authorization: Basic kienboec-mtcgToken"
             if (headers.ContainsKey("authorization"))
             {
-                string[] content = headers["authorization"].Split(' ');
+                string[] content = headers["authorization"].Split(' '); //split token from "basic" 
                 if (content.Length == 2)
                 {
-                    Console.WriteLine("token: " + content[1]);
-                    return content[1];
+                    //Console.WriteLine("token: " + content[1]); 
+                    return content[1]; //return token
                 }
             }
             return string.Empty;
         }
 
-        private static bool CheckToken(string token, string username)
+        private static bool CheckToken(string token, string username) // check if token and username is matching or if admin 
         {
             string tmp = token.Split('-')[0];
-            if (tmp == "admin")
+            if (tmp == "admin")                 //check if admin
             {
                 return true;
             }
-            return tmp == username;
+            return tmp == username; //check if token valid (right user)
         }
 
-        private static string GetUsernameFromToken(string token)
+        private static string GetUsernameFromToken(string token) // retrieve username from token 
         {
             try
             {

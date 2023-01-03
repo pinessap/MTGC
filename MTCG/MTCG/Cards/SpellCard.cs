@@ -9,10 +9,10 @@ namespace MTCG.Cards
 {
     internal class SpellCard : Card
     {
-        public Guid Id { get; }
+        /*public Guid Id { get; }
         public string Name { get; }
         public double Damage { get; }
-        public Element Element { get; }
+        public Element Element { get; }*/
 
         public SpellCard(string name, double damage, Element element, string id) : base(name, damage, element, id)
         {

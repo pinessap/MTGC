@@ -14,7 +14,7 @@ namespace MTCG.Cards
         public double Damage { get; }
         public Element Element { get; }
 
-        public Card(string name, double damage, Element element, string id)
+        public Card(string name, double damage, Element element, string id) // constructor
         {
             Id = new Guid(id);
             Name = name;
@@ -22,10 +22,11 @@ namespace MTCG.Cards
             Element = element;
         }
 
-        public static Card CreateCard(string name, double damage, string id)
+        public static Card CreateCard(string name, double damage, string id) //create and return monster/spell card
         {
             string lowerName = name.ToLower();
 
+            //----------------------------------------- set element of card
             Enums.Element element = Element.Normal;
             if (lowerName.Contains("fire"))
             {
@@ -36,11 +37,13 @@ namespace MTCG.Cards
                 element = Element.Water;
             }
 
+            //----------------------------------------- check if card is spell
             if (lowerName.Contains("spell"))
             {
-                return new SpellCard(name, damage, element, id);
+                return new SpellCard(name, damage, element, id); //create spell card
             }
 
+            //----------------------------------------- create monster card
             Monster monsterType = Monster.Goblin;
             if (lowerName.Contains("Troll"))
             {

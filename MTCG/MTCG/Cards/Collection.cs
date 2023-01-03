@@ -7,35 +7,37 @@ using System.Threading.Tasks;
 
 namespace MTCG.Cards
 {
+    //package, deck or stack
     public class Collection
     {
         private int maxNumOfCards;
+
         public ConcurrentDictionary<string, Card> cards;
-        //public IReadOnlyDictionary<string, Card> Cards { get; }
-        public Collection()
+
+        public Collection() // basic constructor
         {
             cards = new ConcurrentDictionary<string, Card>();
         }
-        public Collection(int maxCards)
+        public Collection(int maxCards) // constructor with maxNumOfCards
         {
             cards = new ConcurrentDictionary<string, Card>();
             maxNumOfCards = maxCards;
         }
 
-        public bool AddCard(Card newCard, bool toPackage = false)
+        public bool AddCard(Card newCard, bool toPackage = false) //add card to dictionary
         {
-            if (!toPackage)
+            if (!toPackage) //check if card is added to package
             {
                 return cards.TryAdd(newCard.Id.ToString(), newCard);
             }
-            else if (maxNumOfCards > cards.Count)
+            else if (maxNumOfCards > cards.Count)   //if package -> check if there are already 4 cards in dictionary
             {
                 return cards.TryAdd(newCard.Id.ToString(), newCard);
             }
             return false;
         }
 
-        public Card RemoveCard(string id)
+        public Card RemoveCard(string id) //remove card from dictionary
         {
             if (cards.TryRemove(id, out Card card))
             {

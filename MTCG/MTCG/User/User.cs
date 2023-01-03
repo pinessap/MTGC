@@ -23,9 +23,10 @@ namespace MTCG.User
         public Collection Stack { get; set; }
         public Collection Deck { get; set; }
 
-        //numofgames
+        public bool isBattling = false;
+        public string latestBattleLog = string.Empty;
 
-        public User(string username, string password)
+        public User(string username, string password) // constructor
         {
             Username = username;
             Password = password;
@@ -42,7 +43,7 @@ namespace MTCG.User
             Deck = new Collection();
         }
 
-        public bool MoveCardToStack(string id)
+        public bool MoveCardToStack(string id) //move card from Deck to Stack 
         {
             if (!Deck.cards.ContainsKey(id))
             {
@@ -51,7 +52,7 @@ namespace MTCG.User
             return Stack.AddCard(Deck.RemoveCard(id));
         }
 
-        public bool MoveCardToDeck(string id)
+        public bool MoveCardToDeck(string id) //move card from Stack to Deck 
         {
             if (!Stack.cards.ContainsKey(id))
             {
@@ -60,26 +61,26 @@ namespace MTCG.User
             return Deck.AddCard(Stack.RemoveCard(id));
         }
 
-        public void Draw()
+        public void Draw() //increase number of games played by user 
         {
             NumGames++;
         }
 
-        public void Win()
+        public void Win() //increase NumGames, Wins and Elo 
         {
             NumGames++;
             Wins++;
             Elo += 3;
         }
 
-        public void Loss()
+        public void Loss() //increase NumGames, Losses and decrease Elo 
         {
             NumGames++;
             Losses++;
             Elo -= 5;
         }
 
-        public Card ChooseRndCard()
+        public Card ChooseRndCard() //choose random card from Deck 
         {
             Random random = new Random();
             int index = random.Next(Deck.cards.Count());
@@ -87,7 +88,7 @@ namespace MTCG.User
             return card;
         }
 
-        public bool IsDeckEmpty()
+        public bool IsDeckEmpty() //check if any cards are left in Deck 
         {
             if (Deck.cards.IsEmpty || Deck.cards.Count() == 0 || !Deck.cards.Any())
             {

@@ -9,10 +9,10 @@ namespace MTCG.Cards
 {
     internal class MonsterCard : Card
     {
-        public Guid Id { get; }
+        /*public Guid Id { get; }
         public string Name { get; }
         public double Damage { get; }
-        public Element Element { get; }
+        public Element Element { get; }*/
         public Monster MonsterType { get; }
         public MonsterCard(string name, double damage, Element element, Monster monsterType, string id) : base (name, damage, element, id)
         {

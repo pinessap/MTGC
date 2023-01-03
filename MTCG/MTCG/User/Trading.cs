@@ -18,7 +18,7 @@ namespace MTCG.User
         public double WantedDamage { get; }
         public string Owner { get; }
 
-        public Trading(string id, Card cardToTrade, string type, double damage, string owner)
+        public Trading(string id, Card cardToTrade, string type, double damage, string owner) // constructor
         {
             Id = new Guid(id);
             WantedType = type;
