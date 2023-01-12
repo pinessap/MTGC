@@ -30,9 +30,13 @@ namespace MTCG.Cards
             {
                 return cards.TryAdd(newCard.Id.ToString(), newCard);
             }
-            else if (maxNumOfCards > cards.Count)   //if package -> check if there are already 4 cards in dictionary
+
+            lock (cards)
             {
-                return cards.TryAdd(newCard.Id.ToString(), newCard);
+                if (maxNumOfCards > cards.Count)   //if package -> check if there are already 4 cards in dictionary
+                {
+                    return cards.TryAdd(newCard.Id.ToString(), newCard);
+                }
             }
             return false;
         }

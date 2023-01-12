@@ -19,7 +19,8 @@ namespace MTCG.Server
     {
         private ConcurrentDictionary<string, User.User> users;                      // Dictionary of all registered Users 
                                                                           
-        private List<string> CardIDs;                                               // List of all Card IDs
+        //private List<string> CardIDs;
+        private ConcurrentBag<string> CardIDs; // List of all Card IDs
         private ConcurrentBag<Collection> packages;                                 // Bag of all packages (package = Collection of Cards)
         private ConcurrentDictionary<string, User.Trading> tradingDeals;            // Dictionary of all Trading Deals
         private ConcurrentQueue<string> battleQueue;                                // Queue of Usernames for Battle
@@ -32,7 +33,8 @@ namespace MTCG.Server
         private ServerMethods()                                                     // Constructor
         {
             users = new ConcurrentDictionary<string, User.User>();
-            CardIDs = new List<string>();
+            //CardIDs = new List<string>();
+            CardIDs = new ConcurrentBag<string>();
             packages = new ConcurrentBag<Collection>();
             tradingDeals = new ConcurrentDictionary<string, Trading>();
             battleQueue = new ConcurrentQueue<string>();
@@ -134,29 +136,32 @@ namespace MTCG.Server
                 Collection package = new Collection(5); //package = collection with 5 elements 
 
                 JArray array = JArray.Parse(jsonBody); //convert json body into json array
-                foreach (JObject card in array.Children<JObject>()) //array consists of objects (= cards)
+                lock (CardIDs)
                 {
-                    id = card.GetValue("Id").Value<string>(); //retrieve id as string
-                    if (CardIDs.Contains(id))       //id has to be unique -> check if already in list of card id's
+                    foreach (JObject card in array.Children<JObject>()) //array consists of objects (= cards)
                     {
-                        return false;
-                    }
-                    name = card.GetValue("Name").Value<string>();
-                    damage = card.GetValue("Damage").Value<double>();
+                        id = card.GetValue("Id").Value<string>(); //retrieve id as string
+                        if (CardIDs.Contains(id))       //id has to be unique -> check if already in bag of card id's
+                        {
+                            return false;
+                        }
+                        name = card.GetValue("Name").Value<string>();
+                        damage = card.GetValue("Damage").Value<double>();
 
-                    Card tmpCard = Card.CreateCard(name, damage, id); //create card
-   
-                    if (package.AddCard(tmpCard, true)) //add card to package
-                    {
-                        CardIDs.Add(id); //add card id to list
+                        Card tmpCard = Card.CreateCard(name, damage, id); //create card
+       
+                        if (package.AddCard(tmpCard, true)) //add card to package
+                        {
+                            CardIDs.Add(id); //add card id to bag
+                        }
+                        else
+                        {
+                            return false;
+                        }
                     }
-                    else
-                    {
-                        return false;
-                    }
+                    packages.Add(package); //add package to packages bag
+                    return true;
                 }
-                packages.Add(package); //add package to packages bag
-                return true;
             }
             catch (Exception e)
             {
@@ -551,28 +556,30 @@ namespace MTCG.Server
                     } 
                     Thread.Sleep(1000); //sleep for a second
                 }
-                
             }
 
-
-            if (battleQueue.Count() >= 2) //if queue has at least two usernames
+            lock (battleQueue)
             {
-                Console.WriteLine("An Opponent was found!");
-                if (battleQueue.TryDequeue(out string uname1) && battleQueue.TryDequeue(out string uname2)) //dequeue first 2 users from queue 
+                if (battleQueue.Count() >= 2) //if queue has at least two usernames
                 {
-                    getUser(uname1).latestBattleLog = string.Empty;
-                    getUser(uname2).latestBattleLog = string.Empty;
-                    Battle battle = new Battle(getUser(uname1),getUser(uname2)); //initialize battle with the 2 users
-                    log = battle.StartBattle(); //start battle
-                    getUser(uname1).latestBattleLog = log;
-                    getUser(uname2).latestBattleLog = log;
-                    return log;
+                    Console.WriteLine("An Opponent was found!");
+                    if (battleQueue.TryDequeue(out string uname1) && battleQueue.TryDequeue(out string uname2)) //dequeue first 2 users from queue 
+                    {
+
+                        getUser(uname1).latestBattleLog = string.Empty;
+                        getUser(uname2).latestBattleLog = string.Empty;
+                        Battle battle = new Battle(getUser(uname1),getUser(uname2)); //initialize battle with the 2 users
+                        log = battle.StartBattle(); //start battle
+                        getUser(uname1).latestBattleLog = log;
+                        getUser(uname2).latestBattleLog = log;
+                        return log;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Something went wrong!");
+                    }
+                    
                 }
-                else
-                {
-                    Console.WriteLine("Something went wrong!");
-                }
-                
             }
             Thread.Sleep(1000); //wait a second, so other User also gets log (otherwise log is empty)
             return getUser(username).latestBattleLog;

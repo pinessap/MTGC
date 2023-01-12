@@ -17,6 +17,10 @@ namespace MTCG.User
         public bool hasStarted = false;
         private List<string> p1CardIDs;
         private List<string> p2CardIDs;
+        private int boost = 0;              //if a player has only 1 card left -> gets 2x damage boost for one round (works only once in the entire battle), 1 = player 1, 2 = player 2
+        private bool boostP1Used = false;   //check if player 1 already had a boost
+        private bool boostP2Used = false;   //check if player 2 already had a boost
+
         public Battle(User u1, User u2) // constructor
         {
             player1 = u1;
@@ -58,45 +62,45 @@ namespace MTCG.User
             return false;
         }
 
-        private int CheckSpecialties(string card1, string card2) //check special rules for fight (and determine winner of the two cards) 
+        private int CheckSpecialties(string card1, string card2, int booster) //check special rules for fight (and determine winner of the two cards) 
         {
-            if (card1.ToLower().Contains("goblin") && card2.ToLower().Contains("dragon"))
+            if (card1.ToLower().Contains("goblin") && card2.ToLower().Contains("dragon") && booster != 1)
             {
                 return 2;
             }
-            else if (card2.ToLower().Contains("goblin") && card1.ToLower().Contains("dragon"))
+            else if (card2.ToLower().Contains("goblin") && card1.ToLower().Contains("dragon") && booster != 2)
             {
                 return 1;
             }
-            else if (card1.ToLower().Contains("wizard") && card2.ToLower().Contains("ork"))
+            else if (card1.ToLower().Contains("wizard") && card2.ToLower().Contains("ork") && booster != 2)
             {
                 return 1;
             }
-            else if (card2.ToLower().Contains("wizard") && card1.ToLower().Contains("ork"))
+            else if (card2.ToLower().Contains("wizard") && card1.ToLower().Contains("ork") && booster != 1)
             {
                 return 2;
             }
-            else if (card1.ToLower().Contains("knight") && card2.ToLower().Contains("waterspell"))
+            else if (card1.ToLower().Contains("knight") && card2.ToLower().Contains("waterspell") && booster != 1)
             {
                 return 2;
             }
-            else if (card2.ToLower().Contains("knight") && card1.ToLower().Contains("waterspell"))
+            else if (card2.ToLower().Contains("knight") && card1.ToLower().Contains("waterspell") && booster != 2)
             {
                 return 1;
             }
-            else if (card1.ToLower().Contains("kraken") && card2.ToLower().Contains("spell"))
+            else if (card1.ToLower().Contains("kraken") && card2.ToLower().Contains("spell") && booster != 2)
             {
                 return 1;
             }
-            else if (card2.ToLower().Contains("kraken") && card1.ToLower().Contains("spell"))
+            else if (card2.ToLower().Contains("kraken") && card1.ToLower().Contains("spell") && booster != 1)
             {
                 return 2;
             }
-            else if (card1.ToLower().Contains("fireelf") && card2.ToLower().Contains("dragon"))
+            else if (card1.ToLower().Contains("fireelf") && card2.ToLower().Contains("dragon") && booster != 2)
             {
                 return 1;
             }
-            else if (card2.ToLower().Contains("fireelf") && card1.ToLower().Contains("dragon"))
+            else if (card2.ToLower().Contains("fireelf") && card1.ToLower().Contains("dragon") && booster != 1)
             {
                 return 2;
             }
@@ -104,20 +108,34 @@ namespace MTCG.User
             return 0;
         }
 
-        private int CardsBattle(Card card1, Card card2) //determine winner between two cards
+        private int CardsBattle(Card card1, Card card2, int booster) //determine winner between two cards 
         {
             bool pureMoFi = CheckPureMonsterFight(card1, card2);
-            int specialFight = CheckSpecialties(card1.Name, card2.Name);
+            int specialFight = CheckSpecialties(card1.Name, card2.Name, boost);
 
             if (specialFight == 0) //if no special rules apply (specialities)
             {
+                double dmgP1 = card1.Damage;
+                double dmgP2 = card2.Damage;
+
+                if (booster == 1 && boostP1Used == false) 
+                {
+                    dmgP1 = card1.Damage * 2;
+                    boostP1Used = true;
+                } 
+                else if (booster == 2 && boostP2Used == false)
+                {
+                    dmgP2 = card2.Damage * 2;
+                    boostP2Used = true;
+                }
+
                 if (pureMoFi) //if fight is between 2 monsters -> elements play no role 
                 {
-                    if (card1.Damage > card2.Damage)
+                    if (dmgP1 > dmgP2)
                     {
                         return 1;
                     } 
-                    else if (card1.Damage < card2.Damage)
+                    else if (dmgP1 < dmgP2)
                     {
                         return 2;
                     }
@@ -132,11 +150,11 @@ namespace MTCG.User
                         card1.Element == Element.Fire && card2.Element == Element.Normal ||
                         card1.Element == Element.Normal && card2.Element == Element.Water)
                     {
-                        if (card1.Damage * 2 > card2.Damage / 2)   
+                        if (dmgP1 * 2 > dmgP2 / 2)   
                         {
                             return 1;
                         }
-                        else if (card1.Damage * 2 < card2.Damage / 2)
+                        else if (dmgP1 * 2 < dmgP2 / 2)
                         {
                             return 2;
                         }
@@ -145,22 +163,22 @@ namespace MTCG.User
                              card2.Element == Element.Fire && card1.Element == Element.Normal ||
                              card2.Element == Element.Normal && card1.Element == Element.Water)
                     {
-                        if (card2.Damage * 2 > card1.Damage / 2)
+                        if (dmgP2 * 2 > dmgP1 / 2)
                         {
                             return 2;
                         }
-                        else if (card2.Damage * 2 < card1.Damage / 2)
+                        else if (dmgP2 * 2 < dmgP1 / 2)
                         {
                             return 1;
                         }
                     }
                     else //if no card if effective against the other
                     {
-                        if (card1.Damage > card2.Damage)
+                        if (dmgP1 > dmgP2)
                         {
                             return 1;
                         }
-                        else if (card1.Damage < card2.Damage)
+                        else if (dmgP1 < dmgP2)
                         {
                             return 2;
                         }
@@ -175,7 +193,7 @@ namespace MTCG.User
             }
         }
 
-        private void resetDecks(Collection deck1, Collection deck2)
+        private void resetDecks(Collection deck1, Collection deck2) // reset decks to state before battle 
         {
             //check if deck1 has cards from deck2
             foreach (KeyValuePair<string, Card> entry in player1.Deck.cards)
@@ -199,7 +217,7 @@ namespace MTCG.User
             Console.WriteLine("Deck2 count: " + player2.Deck.cards.Count());
         }
 
-        public string StartBattle() //start battle between two players
+        public string StartBattle() //start battle between two players 
         {
             hasStarted = true;
             Console.WriteLine("\n\n---------- START GAME ----------\n");
@@ -242,7 +260,7 @@ namespace MTCG.User
                 log += "PlayerA: " + tmpCard1.Name + " (" + tmpCard1.Damage + " Damage) vs PlayerB: " + tmpCard2.Name + " (" + tmpCard2.Damage + " Damage)\n";
 
                 //let the two cards battle against each other
-                int winner = CardsBattle(tmpCard1, tmpCard2);
+                int winner = CardsBattle(tmpCard1, tmpCard2, boost);
 
                 if (winner == 1)
                 {
@@ -264,8 +282,21 @@ namespace MTCG.User
 
                 Console.WriteLine("Cards in Deck of Player 1: " + player1.Deck.cards.Count());
                 Console.WriteLine("Cards in Deck of Player 2: " + player2.Deck.cards.Count());
-            }
 
+                boost = 0;
+                if (player1.Deck.cards.Count() == 1 && boostP1Used == false)
+                {
+                    boost = 1;
+                    log += "Player 1 gets a boost for next round!\n";
+                    Console.WriteLine("Player 1 gets a boost for next round!\n");
+                } else if (player2.Deck.cards.Count() == 1 && boostP2Used == false)
+                {
+                    boost = 2;
+                    log += "Player 2 gets a boost for next round!\n";
+                    Console.WriteLine("Player 2 gets a boost for next round!\n");
+                }
+            }
+            
             log += "----------GAME ENDED IN A DRAW ----------\n";
             Console.WriteLine("---------- GAME ENDED IN A DRAW ----------\n");
             player1.Draw();

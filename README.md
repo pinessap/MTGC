@@ -10,3 +10,4 @@ Time spent:
 | 01/01/23 | 9        | implemented all packages & cards paths (PUT /deck not finished) + /stats & scoreboard                |
 | 02/01/23 | 6.5      | finished /deck and implemented all trading paths; implemented battle (no queue yet & not tested yet) |
 | 03/01/23 | 7.5      | finished battle (+ battle queue), added comments to everything, fixed small bugs                     |
+| 12/01/23 | 2        | added unique feature (battle boost), made methods thread safe (lock), implemented db connection      |
