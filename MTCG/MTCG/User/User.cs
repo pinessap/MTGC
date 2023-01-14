@@ -10,22 +10,27 @@ namespace MTCG.User
     public class User
     {
         public string Username { get; set; }
-        public string Password { get; }
+        public string Password { get; set; }
         public string Token { get; }
         public string Name { get; set; }
         public string Image { get; set; }
         public string Bio { get; set; }
-        public int Coins { get; set; }
-        public int Elo { get; set; }
-        public int Wins { get; set; }
-        public int Losses { get; set; }
-        public int NumGames { get; set; }
+        public int? Coins { get; set; }
+        public int? Elo { get; set; }
+        public int? Wins { get; set; }
+        public int? Losses { get; set; }
+        public int? NumGames { get; set; }
         public Collection Stack { get; set; }
         public Collection Deck { get; set; }
 
         public bool isBattling = false;
         public string latestBattleLog = string.Empty;
 
+        public User() // constructor
+        {
+            Stack = new Collection();
+            Deck = new Collection();
+        }
         public User(string username, string password) // constructor
         {
             Username = username;

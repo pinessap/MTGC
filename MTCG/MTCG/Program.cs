@@ -10,7 +10,8 @@ namespace MTCG
     {
         static void Main(string[] args)
         {
-            /*Console.WriteLine("Starting server on port 10001");
+            Console.WriteLine("Starting server on port 10001");
+            var db = new Database();
             Server.Server server = new Server.Server(10001);
             try
             {
@@ -19,10 +20,7 @@ namespace MTCG
             catch (Exception e)
             {
                 Console.WriteLine("error: " + e.Message);
-            }*/
-            Console.WriteLine("Database test:");
-            var db = new Database();
-            db.ExecuteQuery("INSERT INTO mytable (col1, col2) VALUES ('value1', 'value2')");
+            }
         }
     }
 }

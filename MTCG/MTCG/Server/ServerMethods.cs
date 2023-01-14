@@ -12,13 +12,14 @@ using Newtonsoft.Json.Linq;
 using MTCG.User;
 using System.Diagnostics;
 using System.Xml.Linq;
+using MTCG.DB;
 
 namespace MTCG.Server
 {
     internal class ServerMethods
     {
         private ConcurrentDictionary<string, User.User> users;                      // Dictionary of all registered Users 
-                                                                          
+        private ConcurrentDictionary<string, Cards.Card> cards;
         //private List<string> CardIDs;
         private ConcurrentBag<string> CardIDs; // List of all Card IDs
         private ConcurrentBag<Collection> packages;                                 // Bag of all packages (package = Collection of Cards)
@@ -32,18 +33,47 @@ namespace MTCG.Server
         }
         private ServerMethods()                                                     // Constructor
         {
-            users = new ConcurrentDictionary<string, User.User>();
-            //CardIDs = new List<string>();
-            CardIDs = new ConcurrentBag<string>();
-            packages = new ConcurrentBag<Collection>();
-            tradingDeals = new ConcurrentDictionary<string, Trading>();
-            battleQueue = new ConcurrentQueue<string>();
+            try
+            {
+                //users = new ConcurrentDictionary<string, User.User>();
+                users = new ConcurrentDictionary<string, User.User>(Database.LoadUsers().ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value));
+                
+                //CardIDs = new ConcurrentBag<string>();
+                CardIDs = new ConcurrentBag<string>(Database.LoadCardIDs());
+                
+                //packages = new ConcurrentBag<Collection>();
+                packages = new ConcurrentBag<Collection>(Database.LoadPackages());
+
+                cards = new ConcurrentDictionary<string, Cards.Card>(Database.LoadCards().ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value));
+
+                //tradingDeals = new ConcurrentDictionary<string, Trading>();
+                tradingDeals = new ConcurrentDictionary<string, Trading>(Database.LoadTradings(cards).ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value));
+
+                battleQueue = new ConcurrentQueue<string>();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("error ServerMethods: " + e.Message);
+            }
+
         }
 
         public bool RegisterUser(string jsonBody) // register new User 
         {
+            Console.WriteLine("register");
             User.User newUser = JsonConvert.DeserializeObject<User.User>(jsonBody); //convert json body into User
-            return users.TryAdd(newUser.Username, newUser); //add user to users dictionary
+            if(users.TryAdd(newUser.Username, newUser))//add user to users dictionary
+            {
+                return Database.CreateUser(newUser);
+            }
+            
+            return false;
         }
         public string GetToken(string jsonBody) // get Token if Username and Password match
         {
@@ -70,7 +100,7 @@ namespace MTCG.Server
                 users[username].Name = userData.GetValue("Name").Value<string>(); //set variable to value from json body
                 users[username].Bio = userData.GetValue("Bio").Value<string>();
                 users[username].Image = userData.GetValue("Image").Value<string>();
-                return true;
+                return Database.UpdateUser(username, users[username].Name, users[username].Bio, users[username].Image);
             }
             catch (Exception e)
             {
@@ -160,8 +190,8 @@ namespace MTCG.Server
                         }
                     }
                     packages.Add(package); //add package to packages bag
-                    return true;
                 }
+                return Database.CreatePackage(package);
             }
             catch (Exception e)
             {
@@ -189,7 +219,12 @@ namespace MTCG.Server
                 {
                     users[username].Stack.AddCard(card.Value); //add cards of package to user's stack
                 }
-                return 1;
+
+                if (Database.BuyPackage(username, result))
+                {
+                    return 1;
+                }
+                return -2;
             }
             return -2;
         }
@@ -287,9 +322,11 @@ namespace MTCG.Server
 
                 foreach (string cardID in array)
                 {
+                    Console.WriteLine("card check\n");
                     if (!(users[username].Stack.cards.ContainsKey(cardID) || //check whether user owns card
                           users[username].Deck.cards.ContainsKey(cardID)))
                     {
+                        Console.WriteLine(cardID);
                         return -1;
                     }
                 }
@@ -309,6 +346,8 @@ namespace MTCG.Server
                             return -2;
                         }
                     }
+
+                    Database.RemoveDeck(username);
                 }
 
                 foreach (string cardID in array)
@@ -317,7 +356,11 @@ namespace MTCG.Server
                     {
                         return -2;
                     }
+                    Database.AddDeck(username, cardID);
                 }
+                
+                
+
                 return 0;
 
             } 
@@ -359,6 +402,7 @@ namespace MTCG.Server
         {
             try
             {
+                Console.WriteLine("TRADETEDT");
                 JObject jsonObject = JObject.Parse(jsonBody);
 
                 string id = jsonObject.GetValue("Id").Value<string>(); //get id of trading deal
@@ -390,6 +434,7 @@ namespace MTCG.Server
 
                 if (tradingDeals.TryAdd(tmptrade.Id.ToString(), tmptrade))     //add deal to dictionary of trading deals
                 {
+                    Database.CreateTrade(id, cardID, type, damage,username);
                     return 0;
                 }
                 else
@@ -414,7 +459,7 @@ namespace MTCG.Server
                     return -2;
                 }
 
-                //string cardID = tradingDeals[tradeID].CardToTrade.Id.ToString(); 
+                string cardID = tradingDeals[tradeID].CardToTrade.Id.ToString(); 
 
                 if (tradingDeals[tradeID].Owner != username) //check if user is owner of trading deal (and therefore card to trade)
                 {
@@ -429,6 +474,7 @@ namespace MTCG.Server
 
                 if (users[username].Stack.AddCard(tmpTrade.CardToTrade)) //add card to stack
                 {
+                    Database.DeleteTrade(tradeID, cardID);
                     return 0;
                 }
 
@@ -470,6 +516,7 @@ namespace MTCG.Server
 
                 Card tmpCard = users[username].Stack.cards[offeredCard];
                 Trading tmpTrade = tradingDeals[tradeID];
+                string owner = tmpTrade.Owner;
 
                 bool correctType;
                 if (tmpTrade.WantedType.ToLower().Contains("spell")) //check if wanted card is spell
@@ -514,8 +561,10 @@ namespace MTCG.Server
                     return -3;
                 }*/
 
-                if (users[username].Stack.AddCard(tmpTrade.CardToTrade) && users[tmpTrade.Owner].Stack.AddCard(cardOffered)) //add cards to respective new owner's stack
+                if (users[username].Stack.AddCard(tmpTrade.CardToTrade) 
+                    && users[tmpTrade.Owner].Stack.AddCard(cardOffered)) //add cards to respective new owner's stack
                 {
+                    Database.PerformTrade(tradeID, cardID, offeredCard, owner, username);
                     return 0;
                 }
 
@@ -568,10 +617,12 @@ namespace MTCG.Server
 
                         getUser(uname1).latestBattleLog = string.Empty;
                         getUser(uname2).latestBattleLog = string.Empty;
+                        Console.WriteLine("username1: "+uname1);
                         Battle battle = new Battle(getUser(uname1),getUser(uname2)); //initialize battle with the 2 users
                         log = battle.StartBattle(); //start battle
                         getUser(uname1).latestBattleLog = log;
                         getUser(uname2).latestBattleLog = log;
+                        Database.Battle(getUser(uname1), getUser(uname2), log);
                         return log;
                     }
                     else

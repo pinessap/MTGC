@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using MTCG.Cards.Enums;
@@ -10,7 +11,7 @@ namespace MTCG.Cards
     public class Card
     {
         public Guid Id { get; }
-        public string Name { get; }
+        public string Name { get; set; }
         public double Damage { get; }
         public Element Element { get; }
 
@@ -74,6 +75,19 @@ namespace MTCG.Cards
                 monsterType = Monster.Elf;
             }
             return new MonsterCard(name, damage, element, monsterType, id);
+        }
+
+        public string GetCardType() 
+        {
+            string lowerName = Name.ToLower();
+            
+            //----------------------------------------- check if card is spell
+            if (lowerName.Contains("spell"))
+            {
+                return "Spell"; 
+            }
+
+            return "Monster";
         }
     }
 }
