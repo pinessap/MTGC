@@ -11,8 +11,8 @@ Time spent:
 | 02/01/23 | 6.5      | finished /deck and implemented all trading paths; implemented battle (no queue yet & not tested yet) |
 | 03/01/23 | 7.5      | finished battle (+ battle queue), added comments to everything, fixed small bugs                     |
 | 12/01/23 | 2        | added unique feature (battle boost), made methods thread safe (lock), implemented db connection      |
-| 13/01/23 | 3.5      | added db operations: loading data first at start of program, register & update user                  |
+| 13/01/23 | 10.5     | added db operations: loading data first at start of program, register & update user                  |
 | 14/01/23 | 5        | added rest of db operations                                                                          |
-| 13/01/23 |          |                                                                                                      |
+| 18/01/23 | 5        | added unit tests (users)                                                                             |
 | 13/01/23 |          |                                                                                                      |
 | 13/01/23 |          |                                                                                                      |

@@ -16,9 +16,10 @@ using MTCG.DB;
 
 namespace MTCG.Server
 {
-    internal class ServerMethods
+    public class ServerMethods
     {
-        private ConcurrentDictionary<string, User.User> users;                      // Dictionary of all registered Users 
+        public IDatabase DB;
+        public ConcurrentDictionary<string, User.User> users;                      // Dictionary of all registered Users 
         private ConcurrentDictionary<string, Cards.Card> cards;
         //private List<string> CardIDs;
         private ConcurrentBag<string> CardIDs; // List of all Card IDs
@@ -26,32 +27,43 @@ namespace MTCG.Server
         private ConcurrentDictionary<string, User.Trading> tradingDeals;            // Dictionary of all Trading Deals
         private ConcurrentQueue<string> battleQueue;                                // Queue of Usernames for Battle
 
-        private static readonly ServerMethods serverData = new ServerMethods();     // Instance of ServerMethods
-        public static ServerMethods ServerData                                      // Getter of ServerMethods Instance
+        //private static readonly ServerMethods serverData = new ServerMethods();     // Instance of ServerMethods
+       // public static ServerMethods ServerData                                      // Getter of ServerMethods Instance
+        //{
+         //   get { return serverData; }
+        //}
+        public ServerMethods(bool test, IDatabase db)                                                     // Constructor
         {
-            get { return serverData; }
+            this.DB = db;
+            users = new ConcurrentDictionary<string, User.User>();
+            CardIDs = new ConcurrentBag<string>();
+            packages = new ConcurrentBag<Collection>();
+            tradingDeals = new ConcurrentDictionary<string, Trading>();
+            battleQueue = new ConcurrentQueue<string>();
         }
-        private ServerMethods()                                                     // Constructor
+
+        public ServerMethods(IDatabase db)                                                     // Constructor
         {
+            this.DB = db;
             try
             {
                 //users = new ConcurrentDictionary<string, User.User>();
-                users = new ConcurrentDictionary<string, User.User>(Database.LoadUsers().ToDictionary(
+                users = new ConcurrentDictionary<string, User.User>(DB.LoadUsers().ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value));
                 
                 //CardIDs = new ConcurrentBag<string>();
-                CardIDs = new ConcurrentBag<string>(Database.LoadCardIDs());
+                CardIDs = new ConcurrentBag<string>(DB.LoadCardIDs());
                 
                 //packages = new ConcurrentBag<Collection>();
-                packages = new ConcurrentBag<Collection>(Database.LoadPackages());
+                packages = new ConcurrentBag<Collection>(DB.LoadPackages());
 
-                cards = new ConcurrentDictionary<string, Cards.Card>(Database.LoadCards().ToDictionary(
+                cards = new ConcurrentDictionary<string, Cards.Card>(DB.LoadCards().ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value));
 
                 //tradingDeals = new ConcurrentDictionary<string, Trading>();
-                tradingDeals = new ConcurrentDictionary<string, Trading>(Database.LoadTradings(cards).ToDictionary(
+                tradingDeals = new ConcurrentDictionary<string, Trading>(DB.LoadTradings(cards).ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value));
 
@@ -66,11 +78,11 @@ namespace MTCG.Server
 
         public bool RegisterUser(string jsonBody) // register new User 
         {
-            Console.WriteLine("register");
+            Console.WriteLine("register\n");
             User.User newUser = JsonConvert.DeserializeObject<User.User>(jsonBody); //convert json body into User
             if(users.TryAdd(newUser.Username, newUser))//add user to users dictionary
             {
-                return Database.CreateUser(newUser);
+                return DB.CreateUser(newUser);
             }
             
             return false;
@@ -80,17 +92,33 @@ namespace MTCG.Server
             User.User user = JsonConvert.DeserializeObject<User.User>(jsonBody);
             if (users.ContainsKey(user.Username) && user.Password == users[user.Username].Password) //check if user exists and if password is correct
             {
+                if (string.IsNullOrEmpty(users[user.Username].Token))
+                {
+                    users[user.Username].Token = user.Username + "-mtcgToken";
+                }
                 string token = users[user.Username].Token;
                 JObject jsonObject = new JObject{{"token", token}}; //convert into json
                 return JsonConvert.SerializeObject(jsonObject, Formatting.Indented); //convert into json string
                 //return token;
             }
+            Console.WriteLine("test token2");
             return string.Empty;
         }
         public string GetUserData(string username, string token) // get own User Data 
         {
-            JObject jsonObject = new JObject { { "Name", users[username].Name }, { "Bio", users[username].Bio }, { "Image", users[username].Image } };
-            return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
+            try
+            {
+                JObject jsonObject = new JObject
+                {
+                    { "Name", users[username].Name }, { "Bio", users[username].Bio }, { "Image", users[username].Image }
+                };
+                return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                return string.Empty;
+            }
+            
         }
         public bool UpdateUserData(string username, string jsonBody) // update own User Data 
         {
@@ -100,7 +128,7 @@ namespace MTCG.Server
                 users[username].Name = userData.GetValue("Name").Value<string>(); //set variable to value from json body
                 users[username].Bio = userData.GetValue("Bio").Value<string>();
                 users[username].Image = userData.GetValue("Image").Value<string>();
-                return Database.UpdateUser(username, users[username].Name, users[username].Bio, users[username].Image);
+                return DB.UpdateUser(username, users[username].Name, users[username].Bio, users[username].Image);
             }
             catch (Exception e)
             {
@@ -191,7 +219,7 @@ namespace MTCG.Server
                     }
                     packages.Add(package); //add package to packages bag
                 }
-                return Database.CreatePackage(package);
+                return DB.CreatePackage(package);
             }
             catch (Exception e)
             {
@@ -220,7 +248,7 @@ namespace MTCG.Server
                     users[username].Stack.AddCard(card.Value); //add cards of package to user's stack
                 }
 
-                if (Database.BuyPackage(username, result))
+                if (DB.BuyPackage(username, result))
                 {
                     return 1;
                 }
@@ -347,7 +375,7 @@ namespace MTCG.Server
                         }
                     }
 
-                    Database.RemoveDeck(username);
+                    DB.RemoveDeck(username);
                 }
 
                 foreach (string cardID in array)
@@ -356,7 +384,7 @@ namespace MTCG.Server
                     {
                         return -2;
                     }
-                    Database.AddDeck(username, cardID);
+                    DB.AddDeck(username, cardID);
                 }
                 
                 
@@ -434,7 +462,7 @@ namespace MTCG.Server
 
                 if (tradingDeals.TryAdd(tmptrade.Id.ToString(), tmptrade))     //add deal to dictionary of trading deals
                 {
-                    Database.CreateTrade(id, cardID, type, damage,username);
+                    DB.CreateTrade(id, cardID, type, damage,username);
                     return 0;
                 }
                 else
@@ -474,7 +502,7 @@ namespace MTCG.Server
 
                 if (users[username].Stack.AddCard(tmpTrade.CardToTrade)) //add card to stack
                 {
-                    Database.DeleteTrade(tradeID, cardID);
+                    DB.DeleteTrade(tradeID, cardID);
                     return 0;
                 }
 
@@ -564,7 +592,7 @@ namespace MTCG.Server
                 if (users[username].Stack.AddCard(tmpTrade.CardToTrade) 
                     && users[tmpTrade.Owner].Stack.AddCard(cardOffered)) //add cards to respective new owner's stack
                 {
-                    Database.PerformTrade(tradeID, cardID, offeredCard, owner, username);
+                    DB.PerformTrade(tradeID, cardID, offeredCard, owner, username);
                     return 0;
                 }
 
@@ -622,7 +650,7 @@ namespace MTCG.Server
                         log = battle.StartBattle(); //start battle
                         getUser(uname1).latestBattleLog = log;
                         getUser(uname2).latestBattleLog = log;
-                        Database.Battle(getUser(uname1), getUser(uname2), log);
+                        DB.Battle(getUser(uname1), getUser(uname2), log);
                         return log;
                     }
                     else

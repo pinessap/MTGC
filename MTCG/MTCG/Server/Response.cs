@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using MTCG.DB;
 using Newtonsoft.Json;
 
 namespace MTCG.Server
@@ -58,7 +59,7 @@ namespace MTCG.Server
                 return NullResponse();
             }
 
-            ServerMethods serverData = ServerMethods.ServerData;
+            ServerMethods serverData = new ServerMethods(new Database());
 
             switch (request.Method)
             {
@@ -499,6 +500,7 @@ namespace MTCG.Server
             {
                 return true;
             }
+
             return tmp == username; //check if token valid (right user)
         }
 

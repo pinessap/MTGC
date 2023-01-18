@@ -17,7 +17,7 @@ using static System.Net.Mime.MediaTypeNames;
 
 namespace MTCG.DB
 {
-    internal class Database
+    public class Database : IDatabase
     {
         private readonly string _connectionString;
         private static NpgsqlConnection _conn;
@@ -33,7 +33,7 @@ namespace MTCG.DB
             _conn = new NpgsqlConnection(_connectionString);
         }
         //helper for LoadUsers
-        private static void LoadStack(ConcurrentDictionary<string, User.User> users)
+        private void LoadStack(ConcurrentDictionary<string, User.User> users)
         {
             try
             {
@@ -65,7 +65,7 @@ namespace MTCG.DB
             }
         }
 
-        private static void LoadDeck(ConcurrentDictionary<string, User.User> users)
+        private void LoadDeck(ConcurrentDictionary<string, User.User> users)
         {
             try
             {
@@ -97,7 +97,7 @@ namespace MTCG.DB
             }
         }
 
-        public static ConcurrentDictionary<string, User.User> LoadUsers()
+        public ConcurrentDictionary<string, User.User> LoadUsers()
         {
             Console.WriteLine("LoadUSERS");
             ConcurrentDictionary<string, User.User> tmpusers = new ConcurrentDictionary<string, User.User>();
@@ -116,6 +116,7 @@ namespace MTCG.DB
                             {
                                 Username = reader.IsDBNull(0) ? "" : reader.GetString(0),
                                 Password = reader.IsDBNull(1) ? "" : reader.GetString(1),
+                                Token = reader.IsDBNull(0) ? "" : reader.GetString(1) + "-mtgcToken",
                                 Name = reader.IsDBNull(2) ? "" : reader.GetString(2),
                                 Bio = reader.IsDBNull(3) ? "" : reader.GetString(3),
                                 Image = reader.IsDBNull(4) ? "" : reader.GetString(4),
@@ -143,7 +144,7 @@ namespace MTCG.DB
                 _conn.Close();
             }
         }
-        public static ConcurrentBag<string> LoadCardIDs()
+        public ConcurrentBag<string> LoadCardIDs()
         {
             Console.WriteLine("LoadCardIDS");
             ConcurrentBag<string> tmpCardIDs = new ConcurrentBag<string>();
@@ -177,7 +178,7 @@ namespace MTCG.DB
             }
         }
         //helper for LoadPackages()
-        private static ConcurrentBag<string> LoadPackageIDs()
+        private ConcurrentBag<string> LoadPackageIDs()
         {
             Console.WriteLine("LoadPAckageIDs");
             ConcurrentBag<string> tmpPackageIDs = new ConcurrentBag<string>();
@@ -203,13 +204,13 @@ namespace MTCG.DB
                 return tmpPackageIDs;
             }
         }
-        public static ConcurrentBag<Collection> LoadPackages()
+        public ConcurrentBag<Collection> LoadPackages()
         {
             Console.WriteLine("LoadPAckages");
             ConcurrentBag<Collection> tmpPackages = new ConcurrentBag<Collection>();
             _conn.Open();
             ConcurrentBag<string> tmpPackageIDs = new ConcurrentBag<string>();
-            tmpPackageIDs = new ConcurrentBag<string>(Database.LoadPackageIDs());
+            tmpPackageIDs = new ConcurrentBag<string>(LoadPackageIDs());
             try
             {
                 foreach (var id in tmpPackageIDs)
@@ -252,7 +253,7 @@ namespace MTCG.DB
 
         }
         //save AllCards
-        public static ConcurrentDictionary<string, Cards.Card> LoadCards()
+        public ConcurrentDictionary<string, Cards.Card> LoadCards()
         {
             Console.WriteLine("LoadCards");
             ConcurrentDictionary<string, Cards.Card> tmpcards = new ConcurrentDictionary<string, Cards.Card>();
@@ -290,13 +291,13 @@ namespace MTCG.DB
             }
         }
         //Helper fpr LoadTradings
-        public static Card GetCard(ConcurrentDictionary<string, Cards.Card> cards, string cardID)
+        private Card GetCard(ConcurrentDictionary<string, Cards.Card> cards, string cardID)
         {
             Console.WriteLine("GetCard");
             cards.TryGetValue(cardID, out Card value);
             return value;
         }
-        public static ConcurrentDictionary<string, Trading> LoadTradings(ConcurrentDictionary<string, Cards.Card> cards)
+        public ConcurrentDictionary<string, Trading> LoadTradings(ConcurrentDictionary<string, Cards.Card> cards)
         {
             Console.WriteLine("LoadTradings");
             ConcurrentDictionary<string, Trading> tmpTradings = new ConcurrentDictionary<string, Trading>();
@@ -337,7 +338,7 @@ namespace MTCG.DB
         }
         
 
-        public static bool CreateUser(User.User user)
+        public bool CreateUser(User.User user)
         {
             try
             {
@@ -365,7 +366,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool UpdateUser(string username, string name, string bio, string image)
+        public bool UpdateUser(string username, string name, string bio, string image)
         {
             try
             {
@@ -395,7 +396,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool CreatePackage(Collection package)
+        public bool CreatePackage(Collection package)
         {
             Guid packID = Guid.NewGuid();
 
@@ -450,7 +451,7 @@ namespace MTCG.DB
         }
 
         //BuyPackage
-        public static bool BuyPackage(string username, Collection package)
+        public bool BuyPackage(string username, Collection package)
         {
             string packID;
             try
@@ -480,7 +481,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool ChangeCardOwnerPackageID(string username, string packID)
+        public bool ChangeCardOwnerPackageID(string username, string packID)
         {
             try
             {
@@ -502,7 +503,7 @@ namespace MTCG.DB
 
         }
 
-        public static bool RemovePackage(string packID)
+        public bool RemovePackage(string packID)
         {
             try
             {
@@ -521,7 +522,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool ChangeCoins(string username)
+        public bool ChangeCoins(string username)
         {
             try
             {
@@ -542,7 +543,7 @@ namespace MTCG.DB
 
         //-----
         //ConfigureDeck
-        public static bool RemoveDeck(string username)
+        public bool RemoveDeck(string username)
         {
             try
             {
@@ -567,7 +568,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool AddDeck(string username, string cardID)
+        public bool AddDeck(string username, string cardID)
         {
             try
             {
@@ -594,7 +595,7 @@ namespace MTCG.DB
         }
         //-----
 
-        public static bool CreateTrade(string tradeID, string cardID, string type, double damage, string username)
+        public bool CreateTrade(string tradeID, string cardID, string type, double damage, string username)
         {
             try
             {
@@ -635,7 +636,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool DeleteTrade(string tradeID, string cardID)
+        public bool DeleteTrade(string tradeID, string cardID)
         {
             try
             {
@@ -670,7 +671,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool PerformTrade(string tradeID, string cardID1, string cardID2, string username1, string username2)
+        public bool PerformTrade(string tradeID, string cardID1, string cardID2, string username1, string username2)
         {
             try
             {
@@ -714,7 +715,7 @@ namespace MTCG.DB
             }
         }
 
-        public static bool Battle(User.User user1, User.User user2, string log)
+        public bool Battle(User.User user1, User.User user2, string log)
         {
             try
             {
