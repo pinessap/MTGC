@@ -45,6 +45,7 @@ namespace MTCG.Server
         public ServerMethods(IDatabase db)                                                     // Constructor
         {
             this.DB = db;
+            Console.WriteLine("\nSERVER METHODS\n");
             try
             {
                 //users = new ConcurrentDictionary<string, User.User>();
@@ -614,8 +615,9 @@ namespace MTCG.Server
         }
         public string QueueBattle(string username) // queue for Battle (and start Battle if there is an Opponent) 
         {
-            string log;
+            string log = string.Empty;
             battleQueue.Enqueue(username); //add username to queue
+
 
             Console.WriteLine("queue count: " + battleQueue.Count());
 
@@ -625,43 +627,40 @@ namespace MTCG.Server
                 {
                     if (i % 4 == 0) //for every fourth round
                     {
-                        Console.WriteLine("Waiting for an Opponent..."); 
-                        if (battleQueue.Count() >= 2)   //break if an opponent joined queue
+                        if (!string.IsNullOrEmpty(getUser(username).latestBattleLog))   //break if an opponent joined queue
                         {
                             break;
                         }
+                        Console.WriteLine("Waiting for an Opponent...");
                     } 
                     Thread.Sleep(1000); //sleep for a second
                 }
             }
-
-            lock (battleQueue)
+            else if (battleQueue.Count() >= 2) //if queue has at least two usernames
             {
-                if (battleQueue.Count() >= 2) //if queue has at least two usernames
+                Console.WriteLine("An Opponent was found!");
+                if (battleQueue.TryDequeue(out var uname1) && battleQueue.TryDequeue(out var uname2)) //dequeue first 2 users from queue 
                 {
-                    Console.WriteLine("An Opponent was found!");
-                    if (battleQueue.TryDequeue(out string uname1) && battleQueue.TryDequeue(out string uname2)) //dequeue first 2 users from queue 
-                    {
-
-                        getUser(uname1).latestBattleLog = string.Empty;
-                        getUser(uname2).latestBattleLog = string.Empty;
-                        Console.WriteLine("username1: "+uname1);
-                        Battle battle = new Battle(getUser(uname1),getUser(uname2)); //initialize battle with the 2 users
-                        log = battle.StartBattle(); //start battle
-                        getUser(uname1).latestBattleLog = log;
-                        getUser(uname2).latestBattleLog = log;
-                        DB.Battle(getUser(uname1), getUser(uname2), log);
-                        return log;
-                    }
-                    else
-                    {
-                        Console.WriteLine("Something went wrong!");
-                    }
-                    
+                    getUser(uname1).latestBattleLog = string.Empty;
+                    getUser(uname2).latestBattleLog = string.Empty;
+                    Console.WriteLine("username1: "+uname1);
+                    Battle battle = new Battle(getUser(uname1),getUser(uname2)); //initialize battle with the 2 users
+                    log = battle.StartBattle(); //start battle
+                    getUser(uname1).latestBattleLog = log;
+                    getUser(uname2).latestBattleLog = log;
+                    DB.Battle(getUser(uname1), getUser(uname2), log);
+                    //return log;
                 }
+                else
+                {
+                    Console.WriteLine("Something went wrong!");
+                }
+                    
             }
-            Thread.Sleep(1000); //wait a second, so other User also gets log (otherwise log is empty)
-            return getUser(username).latestBattleLog;
+            //Thread.Sleep(1000); //wait a second, so other User also gets log (otherwise log is empty)
+            string tmpLog = getUser(username).latestBattleLog;
+            getUser(username).latestBattleLog = string.Empty;
+            return tmpLog;
         }
     }
 }

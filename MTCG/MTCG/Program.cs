@@ -11,7 +11,6 @@ namespace MTCG
         static void Main(string[] args)
         {
             Console.WriteLine("Starting server on port 10001");
-            var db = new Database();
             Server.Server server = new Server.Server(10001);
             try
             {

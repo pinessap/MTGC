@@ -1,5 +1,6 @@
 ﻿using System.Net.Sockets;
 using System.Net;
+using MTCG.DB;
 
 
 namespace MTCG.Server
@@ -7,6 +8,8 @@ namespace MTCG.Server
 
     public class Server
     {
+        ServerMethods serverData = new ServerMethods(new Database());
+
         private bool running = false;
         private TcpListener listener;
 
@@ -26,7 +29,8 @@ namespace MTCG.Server
                     Console.WriteLine("Waiting for connection...");
                     TcpClient client = listener.AcceptTcpClient(); //accept connection request
                     Console.WriteLine("Connected!");
-                    ThreadPool.QueueUserWorkItem(HandleClient, client); //execute method inside of a thread
+
+                    ThreadPool.QueueUserWorkItem(HandleClient, new object[]{client, serverData}); //execute method inside of a thread
                 }
             }catch (Exception e)
             {
@@ -41,7 +45,10 @@ namespace MTCG.Server
 
         private void HandleClient(object obj) //get requests from client and send responses bacl
         {
-            TcpClient client = (TcpClient) obj; //cast object to TcpClient
+            object[] objArr = obj as object[];
+
+            TcpClient client = (TcpClient) objArr[0]; //cast object to TcpClient
+            ServerMethods requestHandler = (ServerMethods) objArr[1]; //cast object to serverMethods
             StreamReader reader = new StreamReader(client.GetStream()); //reads characters from stream
             string message = "";
 
@@ -53,7 +60,7 @@ namespace MTCG.Server
                 }
 
                 Request request = Request.GetRequest(message);      //get request
-                Response response = Response.GetResponse(request);  //get fitting response for request
+                Response response = Response.GetResponse(request, requestHandler);  //get fitting response for request
 
                 StreamWriter writer = new StreamWriter(client.GetStream()) { AutoFlush = true }; //writes characters to stream (flushes its buffer to stream)
                 writer.Write(response.ResponseString()); //write string to stream

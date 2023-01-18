@@ -13,6 +13,6 @@ Time spent:
 | 12/01/23 | 2        | added unique feature (battle boost), made methods thread safe (lock), implemented db connection      |
 | 13/01/23 | 10.5     | added db operations: loading data first at start of program, register & update user                  |
 | 14/01/23 | 5        | added rest of db operations                                                                          |
-| 18/01/23 | 5        | added unit tests (users)                                                                             |
+| 18/01/23 | 7        | added unit tests (users), fixed db connection (treated as pool), fixed battle queue                  |
 | 13/01/23 |          |                                                                                                      |
 | 13/01/23 |          |                                                                                                      |

@@ -52,14 +52,14 @@ namespace MTCG.Server
 
         
         //-------------------------------------------------------- RESPONSE HANDLER ----------------------------------------------------------------------------------------     
-        public static Response GetResponse(Request request) 
+        public static Response GetResponse(Request request, ServerMethods serverData) 
         {
             if (request == null) //check first if request null
             {
                 return NullResponse();
             }
 
-            ServerMethods serverData = new ServerMethods(new Database());
+            //ServerMethods serverData = new ServerMethods(new Database());
 
             switch (request.Method)
             {
