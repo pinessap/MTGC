@@ -14,5 +14,5 @@ Time spent:
 | 13/01/23 | 10.5     | added db operations: loading data first at start of program, register & update user                  |
 | 14/01/23 | 5        | added rest of db operations                                                                          |
 | 18/01/23 | 7        | added unit tests (users), fixed db connection (treated as pool), fixed battle queue                  |
-| 13/01/23 |          |                                                                                                      |
+| 19/01/23 | 7        | added rest of unit tests (battle, trading, package, cards)                                           |
 | 13/01/23 |          |                                                                                                      |

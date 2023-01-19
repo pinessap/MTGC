@@ -28,6 +28,14 @@ namespace MTCG.User
 
         public User() // constructor
         {
+            Name = "";
+            Bio = "";
+            Image = "";
+            Coins = 20;
+            Elo = 100;
+            Wins = 0;
+            Losses = 0;
+            NumGames = 0;
             Stack = new Collection();
             Deck = new Collection();
         }

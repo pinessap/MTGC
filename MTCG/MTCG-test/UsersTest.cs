@@ -38,7 +38,7 @@ namespace MTCG_test
             mockDB.Verify(s => s.LoadTradings(It.IsAny<ConcurrentDictionary<string, Card>>()), Times.Once);*/
         }
 
-        [Test]
+        [Test, Order(1)]
         public void AddNewUser()
         {
             string json = "{" + Environment.NewLine +
@@ -56,7 +56,7 @@ namespace MTCG_test
             Assert.AreEqual("Adams", server.users["John"].Password);
         }
 
-        [Test]
+        [Test, Order(2)]
         public void AddUserData()
         {
             server.RegisterUser("{" + Environment.NewLine +
@@ -81,7 +81,7 @@ namespace MTCG_test
             Assert.AreEqual(":/", server.users["John"].Image);
         }
 
-        [Test]
+        [Test, Order(3)]
         public void GetUserToken()
         {
             string json = "{" + Environment.NewLine +
@@ -99,7 +99,7 @@ namespace MTCG_test
             Assert.AreEqual(string.Empty, server.GetToken(failJson));
         }
 
-        [Test]
+        [Test, Order(4)]
         public void GetUserData()
         {
             string regJson = "{" + Environment.NewLine +

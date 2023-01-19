@@ -1,25 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using MTCG.Cards;
 using MTCG.Cards.Enums;
 
+[assembly: InternalsVisibleTo("MTCG-test")]
+
 namespace MTCG.User
 {
-    internal class Battle
+    public class Battle
     {
-        private User player1;
-        private User player2;
+        internal User player1;
+        internal User player2;
         private int roundCount = 0;
         public bool hasStarted = false;
         private List<string> p1CardIDs;
         private List<string> p2CardIDs;
         private int boost = 0;              //if a player has only 1 card left -> gets 2x damage boost for one round (works only once in the entire battle), 1 = player 1, 2 = player 2
-        private bool boostP1Used = false;   //check if player 1 already had a boost
-        private bool boostP2Used = false;   //check if player 2 already had a boost
+        internal bool boostP1Used = false;   //check if player 1 already had a boost
+        internal bool boostP2Used = false;   //check if player 2 already had a boost
 
         public Battle(User u1, User u2) // constructor
         {
@@ -53,7 +56,7 @@ namespace MTCG.User
             return false;                                      //return false if not successful
         }
 
-        private bool CheckPureMonsterFight(Card card1, Card card2) //check whether both cards are monster cards 
+        internal bool CheckPureMonsterFight(Card card1, Card card2) //check whether both cards are monster cards 
         {
             if (!card1.Name.ToLower().Contains("spell") && !card2.Name.ToLower().Contains("spell"))
             {
@@ -62,7 +65,7 @@ namespace MTCG.User
             return false;
         }
 
-        private int CheckSpecialties(string card1, string card2, int booster) //check special rules for fight (and determine winner of the two cards) 
+        internal int CheckSpecialties(string card1, string card2, int booster) //check special rules for fight (and determine winner of the two cards) 
         {
             if (card1.ToLower().Contains("goblin") && card2.ToLower().Contains("dragon") && booster != 1)
             {
@@ -108,8 +111,9 @@ namespace MTCG.User
             return 0;
         }
 
-        private int CardsBattle(Card card1, Card card2, int booster) //determine winner between two cards 
+        internal int CardsBattle(Card card1, Card card2, int booster) //determine winner between two cards 
         {
+            Console.WriteLine("Card battle");
             bool pureMoFi = CheckPureMonsterFight(card1, card2);
             int specialFight = CheckSpecialties(card1.Name, card2.Name, boost);
 
@@ -121,6 +125,7 @@ namespace MTCG.User
                 if (booster == 1 && boostP1Used == false) 
                 {
                     dmgP1 = card1.Damage * 2;
+                    Console.WriteLine("boostdmg:" + dmgP1);
                     boostP1Used = true;
                 } 
                 else if (booster == 2 && boostP2Used == false)
@@ -133,6 +138,7 @@ namespace MTCG.User
                 {
                     if (dmgP1 > dmgP2)
                     {
+                        Console.WriteLine("boostdmgwinner");
                         return 1;
                     } 
                     else if (dmgP1 < dmgP2)

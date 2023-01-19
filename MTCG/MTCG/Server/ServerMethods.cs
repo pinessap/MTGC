@@ -22,9 +22,9 @@ namespace MTCG.Server
         public ConcurrentDictionary<string, User.User> users;                      // Dictionary of all registered Users 
         private ConcurrentDictionary<string, Cards.Card> cards;
         //private List<string> CardIDs;
-        private ConcurrentBag<string> CardIDs; // List of all Card IDs
-        private ConcurrentBag<Collection> packages;                                 // Bag of all packages (package = Collection of Cards)
-        private ConcurrentDictionary<string, User.Trading> tradingDeals;            // Dictionary of all Trading Deals
+        public ConcurrentBag<string> CardIDs; // List of all Card IDs
+        public ConcurrentBag<Collection> packages;                                 // Bag of all packages (package = Collection of Cards)
+        public ConcurrentDictionary<string, User.Trading> tradingDeals;            // Dictionary of all Trading Deals
         private ConcurrentQueue<string> battleQueue;                                // Queue of Usernames for Battle
 
         //private static readonly ServerMethods serverData = new ServerMethods();     // Instance of ServerMethods
@@ -139,14 +139,21 @@ namespace MTCG.Server
         }
         public string GetUserStats(string username) // get user Stats 
         {
-            JObject jsonObject = new JObject
+            try
             {
-                { "Name", users[username].Name }, 
-                { "Elo", users[username].Elo }, 
-                { "Wins", users[username].Wins }, 
-                { "Losses", users[username].Losses }
-            };
-            return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
+                JObject jsonObject = new JObject
+                {
+                    { "Name", users[username].Name },
+                    { "Elo", users[username].Elo },
+                    { "Wins", users[username].Wins },
+                    { "Losses", users[username].Losses }
+                };
+                return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
+            }
+            catch (Exception e)
+            {
+                return string.Empty;
+            }
         }
         public string GetScoreboard() //get Object of Scoreboard (change to Array?) 
         {
@@ -244,6 +251,7 @@ namespace MTCG.Server
             if (tmp && result != null)
             {
                 users[username].Coins -= 5;
+                
                 foreach (KeyValuePair<string, Card> card in result.cards)
                 {
                     users[username].Stack.AddCard(card.Value); //add cards of package to user's stack
@@ -435,14 +443,14 @@ namespace MTCG.Server
                 JObject jsonObject = JObject.Parse(jsonBody);
 
                 string id = jsonObject.GetValue("Id").Value<string>(); //get id of trading deal
-
+                
                 if (tradingDeals.ContainsKey(id)) //check if id already exists (id has to be unique)
                 {
                     return -1;
                 }
 
                 string cardID = jsonObject.GetValue("CardToTrade").Value<string>(); //get id of card to trade
-
+                Console.WriteLine("cardID: " + cardID);
                 if (!users[username].Stack.cards.ContainsKey(cardID))  //check if user owns the card in stack
                 {
                     Console.WriteLine("stack doesn't contain card");
@@ -492,7 +500,6 @@ namespace MTCG.Server
 
                 if (tradingDeals[tradeID].Owner != username) //check if user is owner of trading deal (and therefore card to trade)
                 {
-                    Console.WriteLine("stack doesn't contain card");
                     return -1;
                 }
 
@@ -520,7 +527,7 @@ namespace MTCG.Server
             try
             {
                 string offeredCard = JsonConvert.DeserializeObject<string>(jsonBody);
-
+                
                 if (!tradingDeals.ContainsKey(tradeID)) //check if deal with id exists in dictionary of deals
                 {
                     return -2;
