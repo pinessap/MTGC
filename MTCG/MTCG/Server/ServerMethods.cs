@@ -79,14 +79,23 @@ namespace MTCG.Server
 
         public bool RegisterUser(string jsonBody) // register new User 
         {
-            Console.WriteLine("register\n");
-            User.User newUser = JsonConvert.DeserializeObject<User.User>(jsonBody); //convert json body into User
-            if(users.TryAdd(newUser.Username, newUser))//add user to users dictionary
+            try
             {
-                return DB.CreateUser(newUser);
+                Console.WriteLine("register\n");
+                User.User newUser = JsonConvert.DeserializeObject<User.User>(jsonBody); //convert json body into User
+                Console.WriteLine("Username:" + newUser.Username);
+                Console.WriteLine("Password:" + newUser.Password);
+                if (users.TryAdd(newUser.Username, newUser)) //add user to users dictionary
+                {
+                    return DB.CreateUser(newUser);
+                }
+
+                return false;
             }
-            
-            return false;
+            catch (Exception e)
+            {
+                return false;
+            }
         }
         public string GetToken(string jsonBody) // get Token if Username and Password match
         {
@@ -146,7 +155,8 @@ namespace MTCG.Server
                     { "Name", users[username].Name },
                     { "Elo", users[username].Elo },
                     { "Wins", users[username].Wins },
-                    { "Losses", users[username].Losses }
+                    { "Losses", users[username].Losses },
+                    { "WinRatio", users[username].NumGames == 0 ? 0 : ((users[username].Wins/users[username].NumGames)*100) }
                 };
                 return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
             }
@@ -181,7 +191,8 @@ namespace MTCG.Server
                         Name = entry.Value.Username,
                         Elo = entry.Value.Elo,
                         Wins = entry.Value.Wins,
-                        Losses = entry.Value.Losses
+                        Losses = entry.Value.Losses,
+                        WinRatio = (entry.Value.NumGames == 0 ? 0 : ((entry.Value.Wins/entry.Value.NumGames)*100))
                     });
                 return JsonConvert.SerializeObject(scoresArray, Formatting.Indented);
             }

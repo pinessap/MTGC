@@ -116,7 +116,7 @@ namespace MTCG.DB
                             {
                                 Username = reader.IsDBNull(0) ? "" : reader.GetString(0),
                                 Password = reader.IsDBNull(1) ? "" : reader.GetString(1),
-                                Token = reader.IsDBNull(0) ? "" : reader.GetString(1) + "-mtgcToken",
+                                Token = reader.IsDBNull(0) ? "" : reader.GetString(0) + "-mtgcToken",
                                 Name = reader.IsDBNull(2) ? "" : reader.GetString(2),
                                 Bio = reader.IsDBNull(3) ? "" : reader.GetString(3),
                                 Image = reader.IsDBNull(4) ? "" : reader.GetString(4),

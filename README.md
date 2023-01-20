@@ -15,4 +15,4 @@ Time spent:
 | 14/01/23 | 5        | added rest of db operations                                                                          |
 | 18/01/23 | 7        | added unit tests (users), fixed db connection (treated as pool), fixed battle queue                  |
 | 19/01/23 | 7        | added rest of unit tests (battle, trading, package, cards)                                           |
-| 13/01/23 |          |                                                                                                      |
+| 20/01/23 | 4.5      | added extra feautures: critical hit in battle, higher sophisticated elo calculation, win ratio       |

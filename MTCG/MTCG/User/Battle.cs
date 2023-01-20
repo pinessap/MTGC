@@ -24,10 +24,19 @@ namespace MTCG.User
         internal bool boostP1Used = false;   //check if player 1 already had a boost
         internal bool boostP2Used = false;   //check if player 2 already had a boost
 
+        internal bool P1Crit = false;
+        internal bool P2Crit = false;
+
+        internal int? eloP1;
+        internal int? eloP2;
+
         public Battle(User u1, User u2) // constructor
         {
             player1 = u1;
             player2 = u2;
+            eloP1 = player1.Elo;
+            eloP2 = player2.Elo;
+
             p1CardIDs = new List<string>();
             p2CardIDs = new List<string>();
             foreach (KeyValuePair<string, Card> entry in player1.Deck.cards)
@@ -111,7 +120,7 @@ namespace MTCG.User
             return 0;
         }
 
-        internal int CardsBattle(Card card1, Card card2, int booster) //determine winner between two cards 
+        internal int CardsBattle(Card card1, Card card2, int booster, bool critP1, bool critP2) //determine winner between two cards 
         {
             Console.WriteLine("Card battle");
             bool pureMoFi = CheckPureMonsterFight(card1, card2);
@@ -134,63 +143,46 @@ namespace MTCG.User
                     boostP2Used = true;
                 }
 
-                if (pureMoFi) //if fight is between 2 monsters -> elements play no role 
-                {
-                    if (dmgP1 > dmgP2)
-                    {
-                        Console.WriteLine("boostdmgwinner");
-                        return 1;
-                    } 
-                    else if (dmgP1 < dmgP2)
-                    {
-                        return 2;
-                    }
-                    else //draw
-                    {
-                        return 0;
-                    }
-                }
-                else //elements play a role
+                if(!pureMoFi)//elements play a role
                 {
                     if (card1.Element == Element.Water && card2.Element == Element.Fire ||   //check if card 1 is effective against card 2 
                         card1.Element == Element.Fire && card2.Element == Element.Normal ||
                         card1.Element == Element.Normal && card2.Element == Element.Water)
                     {
-                        if (dmgP1 * 2 > dmgP2 / 2)   
-                        {
-                            return 1;
-                        }
-                        else if (dmgP1 * 2 < dmgP2 / 2)
-                        {
-                            return 2;
-                        }
+                        dmgP1 *= 2;
+                        dmgP2 /= 2;
+
                     }
                     else if (card2.Element == Element.Water && card1.Element == Element.Fire ||   //check if card 2 is effective against card 1
                              card2.Element == Element.Fire && card1.Element == Element.Normal ||
                              card2.Element == Element.Normal && card1.Element == Element.Water)
                     {
-                        if (dmgP2 * 2 > dmgP1 / 2)
-                        {
-                            return 2;
-                        }
-                        else if (dmgP2 * 2 < dmgP1 / 2)
-                        {
-                            return 1;
-                        }
-                    }
-                    else //if no card if effective against the other
-                    {
-                        if (dmgP1 > dmgP2)
-                        {
-                            return 1;
-                        }
-                        else if (dmgP1 < dmgP2)
-                        {
-                            return 2;
-                        }
+                        dmgP2 *= 2;
+                        dmgP1 /= 2;
                     }
                 }
+                
 
+                if (critP1) //calculate damage if player 1 gets crit
+                {
+                    dmgP1 *= 1.5;
+                }
+
+                if (critP2) //calculate damage if player 2 gets crit
+                {
+                    dmgP2 *= 1.5;
+                }
+
+
+                if (dmgP1 > dmgP2)
+                {
+                    return 1;
+                }
+                else if (dmgP1 < dmgP2) 
+                { 
+                    return 2;
+                }
+               
                 return 0;
             }
             else //if specialities apply
@@ -223,6 +215,14 @@ namespace MTCG.User
             Console.WriteLine("Deck2 count: " + player2.Deck.cards.Count());
         }
 
+        private bool getCrit()
+        {
+            Random rand = new Random();
+            int randomValue = rand.Next(1, 101);
+            bool has10PercentChance = randomValue < 11;
+            return has10PercentChance;
+        }
+
         public string StartBattle() //start battle between two players 
         {
             hasStarted = true;
@@ -236,8 +236,8 @@ namespace MTCG.User
                 {
                     log += "---------- PLAYER 2 WON ----------\n";
                     Console.WriteLine("\n---------- PLAYER 2 WON ----------\n");
-                    player2.Win();
-                    player1.Loss();
+                    player2.Win(eloP2, eloP1);
+                    player1.Loss(eloP1, eloP2);
                     resetDecks(player1.Deck, player2.Deck);
                     return log;
                 }
@@ -245,8 +245,8 @@ namespace MTCG.User
                 {
                     log += "---------- PLAYER 1 WON ----------\n";
                     Console.WriteLine("\n---------- PLAYER 1 WON ----------\n");
-                    player1.Win();
-                    player2.Loss();
+                    player1.Win(eloP1, eloP2);
+                    player2.Loss(eloP2, eloP1);
                     resetDecks(player1.Deck, player2.Deck);
                     return log;
                 }
@@ -265,8 +265,26 @@ namespace MTCG.User
 
                 log += "PlayerA: " + tmpCard1.Name + " (" + tmpCard1.Damage + " Damage) vs PlayerB: " + tmpCard2.Name + " (" + tmpCard2.Damage + " Damage)\n";
 
+                P1Crit = getCrit();
+                P2Crit = getCrit();
+
+                if (P1Crit) //calculate if Player1 gets crit
+                {
+                    log += "PlayerA makes a Critical Hit\n";
+                    Console.WriteLine("Player 1 makes a Critical Hit\n");
+                }
+
+                if (P2Crit) //calculate if Player2 gets crit
+                {
+                    log += "PlayerB makes a Critical Hit\n";
+                    Console.WriteLine("Player 2 makes a Critical Hit\n");
+                }
+
                 //let the two cards battle against each other
-                int winner = CardsBattle(tmpCard1, tmpCard2, boost);
+                int winner = CardsBattle(tmpCard1, tmpCard2, boost, P1Crit, P2Crit);
+
+                P1Crit = false;
+                P2Crit = false;
 
                 if (winner == 1)
                 {
@@ -305,8 +323,8 @@ namespace MTCG.User
             
             log += "----------GAME ENDED IN A DRAW ----------\n";
             Console.WriteLine("---------- GAME ENDED IN A DRAW ----------\n");
-            player1.Draw();
-            player2.Draw();
+            player1.Draw(eloP1, eloP2);
+            player2.Draw(eloP2, eloP1);
             resetDecks(player1.Deck, player2.Deck);
             return log;
         }

@@ -74,23 +74,72 @@ namespace MTCG.User
             return Deck.AddCard(Stack.RemoveCard(id));
         }
 
-        public void Draw() //increase number of games played by user 
+        private int GetKValue(int? player1Elo, int? player2Elo)
         {
-            NumGames++;
+            if (!player1Elo.HasValue || !player2Elo.HasValue)
+            {
+                return 0;
+            }
+
+            int eloDifference = Math.Abs(player1Elo.Value - player2Elo.Value);
+
+            if (eloDifference <= 400)
+            {
+                return 32;
+            }
+            else if (eloDifference <= 800)
+            {
+                return 24;
+            }
+            else
+            {
+                return 16;
+            }
+        }
+        
+        internal int UpdateElo(int? playerElo, int? opponentElo, bool playerWon, bool isDraw)
+        {
+            if (!playerElo.HasValue || !opponentElo.HasValue)
+            {
+                return 0;
+            }
+            int K = GetKValue(playerElo, opponentElo);
+            Console.WriteLine("K:" + K);
+            Console.WriteLine("player: " + playerElo);
+            Console.WriteLine("opponent: " + opponentElo);
+            double expectedScore = 1 / (1 + Math.Pow(10, (opponentElo.Value - playerElo.Value) / 400.0));
+            Console.WriteLine("expected:" + expectedScore);
+            if (isDraw)
+            {
+                return playerElo.Value + (int)(K * (0.5 - expectedScore));
+            }
+            else
+            {
+                //Console.WriteLine(playerElo.Value + (int)(K * ((playerWon ? 1 : 0) - expectedScore)));
+                return playerElo.Value + (int)(K * ((playerWon ? 1 : 0) - expectedScore));
+            }
         }
 
-        public void Win() //increase NumGames, Wins and Elo 
+        public void Draw(int? playerElo, int? opponentElo) //increase number of games played by user 
+        {
+            NumGames++;
+            Elo = UpdateElo(playerElo, opponentElo, false, true);
+        }
+
+        public void Win(int? playerElo, int? opponentElo) //increase NumGames, Wins and Elo 
         {
             NumGames++;
             Wins++;
-            Elo += 3;
+            //Elo += 3;
+            Elo = UpdateElo(playerElo, opponentElo, true, false);
         }
 
-        public void Loss() //increase NumGames, Losses and decrease Elo 
+        public void Loss(int? playerElo, int? opponentElo) //increase NumGames, Losses and decrease Elo 
         {
             NumGames++;
             Losses++;
-            Elo -= 5;
+            //Elo -= 5;
+            Elo = UpdateElo(playerElo, opponentElo, false, false);
         }
 
         public Card ChooseRndCard() //choose random card from Deck 
