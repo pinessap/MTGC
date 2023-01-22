@@ -1,0 +1,117 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1" MembersFormat="NameAndType">
+  <Class Name="MTCG.Cards.Card">
+    <Position X="3.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAACAACAAAAAAAAAAAgACAQAAAAAAAAAAAAAAAAAQAA=</HashCode>
+      <FileName>Cards\Card.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.Cards.Collection">
+    <Position X="6" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAIAAAAAAAAAQAAAgAAAAAAAAAAAAAAAAAAAAQAAA=</HashCode>
+      <FileName>Cards\Collection.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.Cards.MonsterCard">
+    <Position X="4.25" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Cards\MonsterCard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.Cards.SpellCard">
+    <Position X="2.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Cards\SpellCard.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.DB.Database" BaseTypeListCollapsed="true">
+    <Position X="16.5" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAJIAAAQAAIAygAAYACAAAQQABABIKAAIAECABCAA=</HashCode>
+      <FileName>DB\Database.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" Collapsed="true" />
+  </Class>
+  <Class Name="MTCG.Server.Request">
+    <Position X="13" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAACAIAAAAhAACACAAACAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Server\Request.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.Server.Response">
+    <Position X="13" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAQAEIAAAAAAAAACBgIAACAgEAIAAEAAAAAAAAAA=</HashCode>
+      <FileName>Server\Response.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.Server.Server">
+    <Position X="14.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAACAAAAAAAAAAAgAAAIgAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Server\Server.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.Server.ServerMethods">
+    <Position X="11.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>MAAAAQABIgAAAAAAQwqAAAIADKAEECAAAAAAABAIABA=</HashCode>
+      <FileName>Server\ServerMethods.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.User.Helpers.RandomNumberGenerator" Collapsed="true">
+    <Position X="9.5" Y="5.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AgAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAA=</HashCode>
+      <FileName>User\Helpers\RandomNumberGenerator.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.User.Battle">
+    <Position X="9.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>wAAAAAAgAAEAwAAAAAhIAgBCAAAEAAAkAAEAAAEAgAA=</HashCode>
+      <FileName>User\Battle.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.User.Trading">
+    <Position X="6" Y="4" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AIACAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAIAA=</HashCode>
+      <FileName>User\Trading.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="MTCG.User.User">
+    <Position X="7.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAgwAAAgkgAAD0AAKAQAgAAACBAiAABIAAABAAA=</HashCode>
+      <FileName>User\User.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Interface Name="MTCG.DB.IDatabase" Collapsed="true">
+    <Position X="16.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAJAAAAQAAIACAAAYACAAAAQABAAIAAAIAACABCAA=</HashCode>
+      <FileName>DB\IDatabase.cs</FileName>
+    </TypeIdentifier>
+  </Interface>
+  <Enum Name="MTCG.Cards.Enums.Element" Collapsed="true">
+    <Position X="2.5" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Cards\Enums\Element.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Enum Name="MTCG.Cards.Enums.Monster" Collapsed="true">
+    <Position X="4.25" Y="5.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAEAAAAABgAAAAAAAAAIAAAgAAIIABAAAAA=</HashCode>
+      <FileName>Cards\Enums\Monster.cs</FileName>
+    </TypeIdentifier>
+  </Enum>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
