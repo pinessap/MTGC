@@ -4,9 +4,10 @@
 https://github.com/pinessap/MTGC
 
 ## Design
-<img src="https://user-images.githubusercontent.com/1788353/213922176-4c2dd8fb-e845-4aea-b04c-7ad5d8e69df3.png" width=50% height=50%>
-<img src="https://user-images.githubusercontent.com/1788353/213922194-77d28369-4d39-43a8-b5f6-5c3cd3971c79.png">
-<img src="https://user-images.githubusercontent.com/1788353/213922411-309282e0-164d-442d-a309-97a667b2a717.png" width=50% height=50%>
+
+![architecture](https://user-images.githubusercontent.com/1788353/213922474-fb55c7a0-a379-4336-8af2-ef1a7aff6653.png)
+
+
 
 ## Testing
 ### Integration Test 
@@ -36,3 +37,10 @@ https://github.com/pinessap/MTGC
 | 21/01/23 | 5.5      | tested everything, fixed small bugs                                                                  |
 | 22/01/23 |       | added documentation                                                                  |
 |  |       | TOTAL TIME                                                              |
+
+
+## Class Diagram
+![ClassDiagram](https://user-images.githubusercontent.com/1788353/213922478-a782a75a-ce87-4e24-ab62-4976aedf2e51.png)
+
+## Database ERD
+![db](https://user-images.githubusercontent.com/1788353/213922482-edcbc08e-c137-488b-815d-f676d7f0fb88.png)
