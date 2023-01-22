@@ -36,21 +36,28 @@ Als mandatory unique feaature habe ich im Battle einen Booster implementiert. Pr
 Pro runde hat hier jeder der beiden Spieler eine 10%-Chance, einen Critical Hit zu machen (siehe getCrit-Method in Battle-Class). Hier wird am Ende der Damage-Berechnung nochmal der Damage x1.5 gerechnet (siehe CardsBattle-Method in Battle-Class). 
 
 #### Elo Calculation
-Statt der einfach +3 für einen Win, -5 für einen Loss wird hier bei der Elo-Berechnung zuerst ein Erwartungswert berechnet und mithilfe von diesem dann der entsprechende Elo Wert. 
+Statt einfach +3 für einen Win, -5 für einen Loss zu nehmen wird hier bei der Elo-Berechnung zuerst ein Erwartungswert berechnet und mithilfe von diesem und dem k-Faktor dann der entsprechende neue Elo Wert ausgerechnet. 
 
 ```
 int K = GetKValue(playerElo, opponentElo);
-            double expectedScore = 1 / (1 + Math.Pow(10, (opponentElo.Value - playerElo.Value) / 400.0));
-            if (isDraw)
-            {
-                return playerElo.Value + (int)(K * (0.5 - expectedScore));
-            }
-            else
-            {
-                return playerElo.Value + (int)(K * ((playerWon ? 1 : 0) - expectedScore));
-            }
+double expectedScore = 1 / (1 + Math.Pow(10, (opponentElo.Value - playerElo.Value) / 400.0));
+if (isDraw)
+{
+            return playerElo.Value + (int)(K * (0.5 - expectedScore));
+}
+else
+{
+            return playerElo.Value + (int)(K * ((playerWon ? 1 : 0) - expectedScore));
+}
 ```
 
+#### Win Ratio
+Beim Anzeigen von Stats und Scoreboard wird hier noch die WinRatio jedes Spieler berechnet und angezeigt (siehe GetUserStats-Method bzw. GetScoreboard-Method in ServerMethods-Class). Diese berechnet sich aus Anzahl der Wins durch die Anzahl an gespielten Games und dasmultipliziert mit 100 um sie als Prozent zu bekommen.
+
+```
+(users[username].Wins/users[username].NumGames)*100
+```
+_______
 ## Time spent:
 
 | date     | time (h) | comment                                                                                              |
