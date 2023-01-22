@@ -5,8 +5,8 @@ https://github.com/pinessap/MTGC
 
 ## Design
 <img src="https://user-images.githubusercontent.com/1788353/213922176-4c2dd8fb-e845-4aea-b04c-7ad5d8e69df3.png" width=50% height=50%>
-<img src="https://user-images.githubusercontent.com/1788353/213922194-77d28369-4d39-43a8-b5f6-5c3cd3971c79.png" width=70% height=70%>
-<img src="!https://user-images.githubusercontent.com/1788353/213922411-309282e0-164d-442d-a309-97a667b2a717.png" width=50% height=50%>
+<img src="https://user-images.githubusercontent.com/1788353/213922194-77d28369-4d39-43a8-b5f6-5c3cd3971c79.png">
+<img src="https://user-images.githubusercontent.com/1788353/213922411-309282e0-164d-442d-a309-97a667b2a717.png" width=50% height=50%>
 
 ## Testing
 ### Integration Test 
