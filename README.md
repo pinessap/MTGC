@@ -78,7 +78,7 @@ _______
 | 20/01/23 | 4.5      | added extra feautures: critical hit in battle, higher sophisticated elo calculation, win ratio       |
 | 21/01/23 | 5.5      | tested everything, fixed small bugs                                                                  |
 | 22/01/23 |   3    | added documentation                                                                  |
-|  |       | TOTAL TIME                                                              |
+|  |   77.5    | TOTAL TIME                                                              |
 _______
 
 ## Class Diagram
