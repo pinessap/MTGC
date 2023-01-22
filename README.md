@@ -37,7 +37,7 @@ https://github.com/pinessap/MTGC
 | 21/01/23 | 5.5      | tested everything, fixed small bugs                                                                  |
 | 22/01/23 |       | added documentation                                                                  |
 |  |       | TOTAL TIME                                                              |
-
+_______
 
 ## Class Diagram
 ![ClassDiagram](https://user-images.githubusercontent.com/1788353/213922478-a782a75a-ce87-4e24-ab62-4976aedf2e51.png)
