@@ -1,6 +1,20 @@
 # MTGC | Ines Petrusic
 
-### Time spent:
+##Git Link
+https://github.com/pinessap/MTGC
+
+## Design
+
+## Testing
+### Integration Test 
+### Unit Tests
+
+## Additional Features
+### Unique Feature
+
+### Optional Feautures
+
+## Time spent:
 
 | date     | time (h) | comment                                                                                              |
 | -------- | -------- | ---------------------------------------------------------------------------------------------------- |
@@ -17,3 +31,5 @@
 | 19/01/23 | 7        | added rest of unit tests (battle, trading, package, cards)                                           |
 | 20/01/23 | 4.5      | added extra feautures: critical hit in battle, higher sophisticated elo calculation, win ratio       |
 | 21/01/23 | 5.5      | tested everything, fixed small bugs                                                                  |
+| 22/01/23 |       | adeed documentation                                                                  |
+|  |       | TOTAL TIME                                                              |
