@@ -1,6 +1,6 @@
 # MTGC | Ines Petrusic
 
-##Git Link
+## Git Link
 https://github.com/pinessap/MTGC
 
 ## Design
