@@ -29,8 +29,8 @@ namespace MTCG.Server
             Console.WriteLine("method: " + method);
             Console.WriteLine("path: " + path);
             Console.WriteLine("host: " + host);
-            Console.WriteLine("headers: " + headers);
-            Console.WriteLine("query: " + queryParameters);
+            //Console.WriteLine("headers: " + headers);
+            //Console.WriteLine("query: " + queryParameters);
             Console.WriteLine("body: \n" + body);
         }
 

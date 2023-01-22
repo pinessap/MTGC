@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -14,17 +15,17 @@ using Npgsql;
 using NpgsqlTypes;
 using static System.Net.Mime.MediaTypeNames;
 
-
 namespace MTCG.DB
 {
     public class Database : IDatabase
     {
         private readonly string _connectionString;
         private static NpgsqlConnection _conn;
+        private readonly object _lock = new object();
 
         public Database()
         {
-            _connectionString = "Server=localhost;Port=5432;User Id=postgres;Password=password;Database=MTGCdb;";
+            _connectionString = "Server=localhost;Port=5432;User Id=postgres;Password=password;Database=MTGCdb";
             _conn = new NpgsqlConnection(_connectionString);
         }
         public Database(string connectionString)
@@ -32,8 +33,12 @@ namespace MTCG.DB
             _connectionString = connectionString;
             _conn = new NpgsqlConnection(_connectionString);
         }
-        //helper for LoadUsers
-        private void LoadStack(ConcurrentDictionary<string, User.User> users)
+
+        //----------------------------------------------------
+        // load at start of program data from db
+
+        //------ LoadUsers ---------
+        private void LoadStack(ConcurrentDictionary<string, User.User> users) //load stack for all users
         {
             try
             {
@@ -64,8 +69,7 @@ namespace MTCG.DB
                 Console.WriteLine("error LoadUsers: " + e.Message);
             }
         }
-
-        private void LoadDeck(ConcurrentDictionary<string, User.User> users)
+        private void LoadDeck(ConcurrentDictionary<string, User.User> users) //load decks for all users
         {
             try
             {
@@ -96,10 +100,9 @@ namespace MTCG.DB
                 Console.WriteLine("error LoadUsers: " + e.Message);
             }
         }
-
         public ConcurrentDictionary<string, User.User> LoadUsers()
         {
-            Console.WriteLine("LoadUSERS");
+            Console.WriteLine("loading all users from database...");
             ConcurrentDictionary<string, User.User> tmpusers = new ConcurrentDictionary<string, User.User>();
             try
             {
@@ -144,9 +147,11 @@ namespace MTCG.DB
                 _conn.Close();
             }
         }
+        //--------------------------
+
         public ConcurrentBag<string> LoadCardIDs()
         {
-            Console.WriteLine("LoadCardIDS");
+            Console.WriteLine("loading all card ids from database...");
             ConcurrentBag<string> tmpCardIDs = new ConcurrentBag<string>();
             try
             {
@@ -164,7 +169,6 @@ namespace MTCG.DB
                 }
 
                 tmpCardIDs.TryPeek(out string result);
-                Console.WriteLine("loda card ids:" +result);
                 return tmpCardIDs;
             }
             catch (Exception e)
@@ -177,10 +181,10 @@ namespace MTCG.DB
                 _conn.Close();
             }
         }
-        //helper for LoadPackages()
+
+        //----- LoadPackages -------
         private ConcurrentBag<string> LoadPackageIDs()
         {
-            Console.WriteLine("LoadPAckageIDs");
             ConcurrentBag<string> tmpPackageIDs = new ConcurrentBag<string>();
             try
             {
@@ -192,7 +196,7 @@ namespace MTCG.DB
                         while (reader.Read())
                         {
                             tmpPackageIDs.Add(reader.GetString(0));
-                            Console.WriteLine("package id:" + reader.GetString(0));
+                            //Console.WriteLine("package id:" + reader.GetString(0));
                         }
                     }
                 }
@@ -206,7 +210,7 @@ namespace MTCG.DB
         }
         public ConcurrentBag<Collection> LoadPackages()
         {
-            Console.WriteLine("LoadPAckages");
+            Console.WriteLine("loading all packages from database...");
             ConcurrentBag<Collection> tmpPackages = new ConcurrentBag<Collection>();
             _conn.Open();
             ConcurrentBag<string> tmpPackageIDs = new ConcurrentBag<string>();
@@ -229,9 +233,9 @@ namespace MTCG.DB
                                     reader.IsDBNull(2) ? 0 : reader.GetDouble(2),
                                     reader.IsDBNull(0) ? null : reader.GetString(0)
                                     );
-                                Console.WriteLine(tmpCard.Name);
-                                Console.WriteLine(tmpCard.Damage);
-                                Console.WriteLine(tmpCard.Id);
+                                //Console.WriteLine(tmpCard.Name);
+                                //Console.WriteLine(tmpCard.Damage);
+                                //Console.WriteLine(tmpCard.Id);
                                 tmppackage.AddCard(tmpCard, true);
                             }
                         }
@@ -252,10 +256,11 @@ namespace MTCG.DB
             }
 
         }
-        //save AllCards
+        //--------------------------
+
         public ConcurrentDictionary<string, Cards.Card> LoadCards()
         {
-            Console.WriteLine("LoadCards");
+            Console.WriteLine("laoding all cards from database...");
             ConcurrentDictionary<string, Cards.Card> tmpcards = new ConcurrentDictionary<string, Cards.Card>();
             try
             {
@@ -290,16 +295,16 @@ namespace MTCG.DB
                 _conn.Close();
             }
         }
-        //Helper fpr LoadTradings
+
+        //------ LoadTradings ------
         private Card GetCard(ConcurrentDictionary<string, Cards.Card> cards, string cardID)
         {
-            Console.WriteLine("GetCard");
             cards.TryGetValue(cardID, out Card value);
             return value;
         }
         public ConcurrentDictionary<string, Trading> LoadTradings(ConcurrentDictionary<string, Cards.Card> cards)
         {
-            Console.WriteLine("LoadTradings");
+            Console.WriteLine("loading all trade deals from database...");
             ConcurrentDictionary<string, Trading> tmpTradings = new ConcurrentDictionary<string, Trading>();
             try
             {
@@ -336,157 +341,171 @@ namespace MTCG.DB
                 _conn.Close();
             }
         }
-        
+        //--------------------------
+
+        //----------------------------------------------------
 
         public bool CreateUser(User.User user)
         {
-            try
+            lock (_lock)
             {
-                var sql = "INSERT INTO \"user\" (username,password) VALUES (@username,@password)";
-                using var cmd = new NpgsqlCommand(sql, _conn);
-                cmd.Parameters.AddWithValue("username", user.Username);
-                cmd.Parameters.AddWithValue("password", user.Password);
-
-                _conn.Open();
-                if (cmd.ExecuteNonQuery() == 1)
+                try
                 {
-                    return true;
-                }
+                    var sql = "INSERT INTO \"user\" (username,password) VALUES (@username,@password)";
+                    using var cmd = new NpgsqlCommand(sql, _conn);
+                    cmd.Parameters.AddWithValue("username", user.Username);
+                    cmd.Parameters.AddWithValue("password", user.Password);
 
-                return false;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                    _conn.Open();
+                    if (cmd.ExecuteNonQuery() == 1)
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
-
         public bool UpdateUser(string username, string name, string bio, string image)
         {
-            try
+            lock (_lock)
             {
-                var sql = "UPDATE \"user\" SET name=@name,bio=@bio,image=@image WHERE username=@username ";
-                using var cmd = new NpgsqlCommand(sql, _conn);
-                cmd.Parameters.AddWithValue("@name", name);
-                cmd.Parameters.AddWithValue("@bio", bio);
-                cmd.Parameters.AddWithValue("@image", image);
-                cmd.Parameters.AddWithValue("@username", username);
-
-                _conn.Open();
-                if (cmd.ExecuteNonQuery() == 1)
+                try
                 {
-                    return true;
-                }
+                    var sql = "UPDATE \"user\" SET name=@name,bio=@bio,image=@image WHERE username=@username ";
+                    using var cmd = new NpgsqlCommand(sql, _conn);
+                    cmd.Parameters.AddWithValue("@name", name);
+                    cmd.Parameters.AddWithValue("@bio", bio);
+                    cmd.Parameters.AddWithValue("@image", image);
+                    cmd.Parameters.AddWithValue("@username", username);
 
-                return false;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                    _conn.Open();
+                    if (cmd.ExecuteNonQuery() == 1)
+                    {
+                        return true;
+                    }
+
+                    return false;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
 
         public bool CreatePackage(Collection package)
         {
-            Guid packID = Guid.NewGuid();
-
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                using (var transaction = _conn.BeginTransaction())
+                Guid packID = Guid.NewGuid();
+
+                try
                 {
-                    var sql1 = "INSERT INTO package (id) VALUES (@id)";
-                    using (var cmd = new NpgsqlCommand(sql1, _conn))
+                    _conn.Open();
+                    using (var transaction = _conn.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@id", packID);
-                        cmd.Transaction = transaction;
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    var sql2 = "INSERT INTO card (id,name,damage,element,type, packageid) " +
-                               "VALUES (@id,@name,@damage,@element,@type,@packageid)";
-                    
-
-                    // Insert data into the table
-                    using (var writer =
-                           _conn.BeginBinaryImport(
-                               "COPY card (id, name, damage, element, type, packageid) FROM STDIN (FORMAT BINARY)"))
-                    {
-                        // Add the data from the package.cards to the writer
-                        foreach (var card in package.cards)
+                        var sql1 = "INSERT INTO package (id) VALUES (@id)";
+                        using (var cmd = new NpgsqlCommand(sql1, _conn))
                         {
-                            writer.StartRow();
-                            writer.Write(card.Value.Id.ToString(), NpgsqlDbType.Varchar);
-                            writer.Write(card.Value.Name, NpgsqlDbType.Varchar);
-                            writer.Write(card.Value.Damage, NpgsqlDbType.Double);
-                            writer.Write(card.Value.Element.ToString(), NpgsqlDbType.Varchar);
-                            writer.Write(card.Value.GetCardType(), NpgsqlDbType.Varchar);
-                            writer.Write(packID.ToString(), NpgsqlDbType.Varchar);
+                            cmd.Parameters.AddWithValue("@id", packID);
+                            cmd.Transaction = transaction;
+                            cmd.ExecuteNonQuery();
                         }
-                        writer.Complete();
+
+                        //var sql2 = "INSERT INTO card (id,name,damage,element,type, packageid) VALUES (@id,@name,@damage,@element,@type,@packageid)";
+
+
+                        // Insert data into the table
+                        using (var writer =
+                               _conn.BeginBinaryImport(
+                                   "COPY card (id, name, damage, element, type, packageid) FROM STDIN (FORMAT BINARY)"))
+                        {
+                            // Add the data from the package.cards to the writer
+                            foreach (var card in package.cards)
+                            {
+                                writer.StartRow();
+                                writer.Write(card.Value.Id.ToString(), NpgsqlDbType.Varchar);
+                                writer.Write(card.Value.Name, NpgsqlDbType.Varchar);
+                                writer.Write(card.Value.Damage, NpgsqlDbType.Double);
+                                writer.Write(card.Value.Element.ToString(), NpgsqlDbType.Varchar);
+                                writer.Write(card.Value.GetCardType(), NpgsqlDbType.Varchar);
+                                writer.Write(packID.ToString(), NpgsqlDbType.Varchar);
+                            }
+
+                            writer.Complete();
+                        }
+
+                        transaction.Commit();
                     }
-                    transaction.Commit();
+
+                    return true;
                 }
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
 
-        //BuyPackage
+        //------ BuyPackage ------
         public bool BuyPackage(string username, Collection package)
         {
-            string packID;
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                var sql = "SELECT packageid FROM card WHERE  \"id\"=@id";
-                using (var cmd = new NpgsqlCommand(sql, _conn))
-                { 
-                    cmd.Parameters.AddWithValue("@id", package.cards.ElementAt(1).Key);
-                    packID = (string)cmd.ExecuteScalar();
+                string packID;
+                try
+                {
+                    _conn.Open();
+                    var sql = "SELECT packageid FROM card WHERE  \"id\"=@id";
+                    using (var cmd = new NpgsqlCommand(sql, _conn))
+                    {
+                        cmd.Parameters.AddWithValue("@id", package.cards.ElementAt(1).Key);
+                        packID = (string)cmd.ExecuteScalar();
+                    }
+
+                    ChangeCardOwnerPackageID(username, packID);
+                    RemovePackage(packID);
+                    ChangeCoins(username);
+
+                    return true;
                 }
-
-                ChangeCardOwnerPackageID(username, packID);
-                RemovePackage(packID);
-                ChangeCoins(username);
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
-
-        public bool ChangeCardOwnerPackageID(string username, string packID)
+        private bool ChangeCardOwnerPackageID(string username, string packID)
         {
             try
             {
                 var sql = "UPDATE card SET owner=@owner,packageid=NULL WHERE packageid=@packageid";
-                using (var cmd = new NpgsqlCommand(sql, _conn))
+                using (var cmd = new NpgsqlCommand(sql, _conn)) 
                 {
                     cmd.Parameters.AddWithValue("@owner", username);
                     cmd.Parameters.AddWithValue("@packageID", packID);
@@ -500,19 +519,18 @@ namespace MTCG.DB
                 Console.WriteLine("error: " + e.Message);
                 return false;
             }
-
         }
-
-        public bool RemovePackage(string packID)
+        private bool RemovePackage(string packID)
         {
             try
             {
                 var sql = "DELETE from package WHERE id=@id";
                 using (var cmd = new NpgsqlCommand(sql, _conn))
-                {
-                    cmd.Parameters.AddWithValue("@id", packID);
+                { 
+                    cmd.Parameters.AddWithValue("@id", packID); 
                     cmd.ExecuteNonQuery();
                 }
+
                 return true;
             }
             catch (Exception e)
@@ -520,250 +538,281 @@ namespace MTCG.DB
                 Console.WriteLine("error: " + e.Message);
                 return false;
             }
+            
         }
-
-        public bool ChangeCoins(string username)
+        private bool ChangeCoins(string username)
         {
             try
             {
                 var sql = "UPDATE \"user\" SET coins=coins-5 WHERE username=@username";
                 using (var cmd = new NpgsqlCommand(sql, _conn))
-                {
+                { 
                     cmd.Parameters.AddWithValue("@username", username);
-                    Console.WriteLine("rows: " +cmd.ExecuteNonQuery());
+                    cmd.ExecuteNonQuery();
                 }
+
                 return true;
             }
-            catch (Exception e)
+            catch (Exception e) 
             {
                 Console.WriteLine("error: " + e.Message);
                 return false;
             }
+          
         }
+        //------------------------
 
         //-----
         //ConfigureDeck
         public bool RemoveDeck(string username)
         {
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                var sql = "UPDATE card SET deck=false WHERE owner=@owner";
-                using (var cmd = new NpgsqlCommand(sql, _conn))
+                try
                 {
-                    cmd.Parameters.AddWithValue("@owner", username);
-                    cmd.ExecuteNonQuery();
-                }
+                    _conn.Open();
+                    var sql = "UPDATE card SET deck=false WHERE owner=@owner";
+                    using (var cmd = new NpgsqlCommand(sql, _conn))
+                    {
+                        cmd.Parameters.AddWithValue("@owner", username);
+                        cmd.ExecuteNonQuery();
+                    }
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
-
         public bool AddDeck(string username, string cardID)
         {
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                var sql = "UPDATE card SET deck=true WHERE owner=@owner AND id=@id";
-                using (var cmd = new NpgsqlCommand(sql, _conn))
+                try
                 {
-                    cmd.Parameters.AddWithValue("@owner", username);
-                    cmd.Parameters.AddWithValue("@id", cardID);
-                    cmd.ExecuteNonQuery();
-                }
+                    _conn.Open();
+                    var sql = "UPDATE card SET deck=true WHERE owner=@owner AND id=@id";
+                    using (var cmd = new NpgsqlCommand(sql, _conn))
+                    {
+                        cmd.Parameters.AddWithValue("@owner", username);
+                        cmd.Parameters.AddWithValue("@id", cardID);
+                        cmd.ExecuteNonQuery();
+                    }
 
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                    return true;
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
         //-----
 
         public bool CreateTrade(string tradeID, string cardID, string type, double damage, string username)
         {
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                using (var trans = _conn.BeginTransaction())
+                try
                 {
-                    var sql = "INSERT INTO trade (\"id\", \"cardToTrade\", type, damage, owner) VALUES (@id,@cardToTrade,@type,@damage,@owner)";
-                    using (var cmd = new NpgsqlCommand(sql, _conn))
+                    _conn.Open();
+                    using (var trans = _conn.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@id", tradeID);
-                        cmd.Parameters.AddWithValue("@cardToTrade", cardID);
-                        cmd.Parameters.AddWithValue("@type", type);
-                        cmd.Parameters.AddWithValue("@damage", damage);
-                        cmd.Parameters.AddWithValue("@owner", username);
+                        var sql =
+                            "INSERT INTO trade (\"id\", \"cardToTrade\", type, damage, owner) VALUES (@id,@cardToTrade,@type,@damage,@owner)";
+                        using (var cmd = new NpgsqlCommand(sql, _conn))
+                        {
+                            cmd.Parameters.AddWithValue("@id", tradeID);
+                            cmd.Parameters.AddWithValue("@cardToTrade", cardID);
+                            cmd.Parameters.AddWithValue("@type", type);
+                            cmd.Parameters.AddWithValue("@damage", damage);
+                            cmd.Parameters.AddWithValue("@owner", username);
 
-                        cmd.ExecuteNonQuery();
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        var sql2 = "UPDATE card SET trade=true WHERE \"id\"=@id";
+                        using (var cmd2 = new NpgsqlCommand(sql2, _conn))
+                        {
+                            cmd2.Parameters.AddWithValue("@id", cardID);
+                            cmd2.ExecuteNonQuery();
+                        }
+
+                        trans.Commit();
                     }
 
-                    var sql2 = "UPDATE card SET trade=true WHERE \"id\"=@id";
-                    using (var cmd2 = new NpgsqlCommand(sql2, _conn))
-                    {
-                        cmd2.Parameters.AddWithValue("@id", cardID);
-                        cmd2.ExecuteNonQuery();
-                    }
-                    trans.Commit();
+                    return true;
                 }
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
 
         public bool DeleteTrade(string tradeID, string cardID)
         {
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                using (var trans = _conn.BeginTransaction())
+                try
                 {
-                    var sql = "DELETE from trade WHERE id=@id";
-                    using (var cmd = new NpgsqlCommand(sql, _conn))
+                    _conn.Open();
+                    using (var trans = _conn.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@id", tradeID);
-                        cmd.ExecuteNonQuery();
+                        var sql = "DELETE from trade WHERE id=@id";
+                        using (var cmd = new NpgsqlCommand(sql, _conn))
+                        {
+                            cmd.Parameters.AddWithValue("@id", tradeID);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        var sql2 = "UPDATE card SET trade=false WHERE \"id\"=@id";
+                        using (var cmd2 = new NpgsqlCommand(sql2, _conn))
+                        {
+                            cmd2.Parameters.AddWithValue("@id", cardID);
+                            cmd2.ExecuteNonQuery();
+                        }
+
+                        trans.Commit();
                     }
 
-                    var sql2 = "UPDATE card SET trade=false WHERE \"id\"=@id";
-                    using (var cmd2 = new NpgsqlCommand(sql2, _conn))
-                    {
-                        cmd2.Parameters.AddWithValue("@id", cardID);
-                        cmd2.ExecuteNonQuery();
-                    }
-                    trans.Commit();
+                    return true;
                 }
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
 
         public bool PerformTrade(string tradeID, string cardID1, string cardID2, string username1, string username2)
         {
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                using (var trans = _conn.BeginTransaction())
+                try
                 {
-                    var sql = "DELETE from trade WHERE id=@id";
-                    using (var cmd = new NpgsqlCommand(sql, _conn))
+                    _conn.Open();
+                    using (var trans = _conn.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@id", tradeID);
-                        cmd.ExecuteNonQuery();
+                        var sql = "DELETE from trade WHERE id=@id";
+                        using (var cmd = new NpgsqlCommand(sql, _conn))
+                        {
+                            cmd.Parameters.AddWithValue("@id", tradeID);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        var sql2 = "UPDATE card SET trade=false,owner=@owner WHERE \"id\"=@id";
+                        using (var cmd2 = new NpgsqlCommand(sql2, _conn))
+                        {
+                            cmd2.Parameters.AddWithValue("@id", cardID1);
+                            cmd2.Parameters.AddWithValue("@owner", username2);
+                            cmd2.ExecuteNonQuery();
+                        }
+
+                        //var sql3 = "UPDATE card SET owner=@owner WHERE \"id\"=@id";
+                        using (var cmd2 = new NpgsqlCommand(sql2, _conn))
+                        {
+                            cmd2.Parameters.AddWithValue("@id", cardID2);
+                            cmd2.Parameters.AddWithValue("@owner", username1);
+                            cmd2.ExecuteNonQuery();
+                        }
+
+                        trans.Commit();
                     }
 
-                    var sql2 = "UPDATE card SET trade=false,owner=@owner WHERE \"id\"=@id";
-                    using (var cmd2 = new NpgsqlCommand(sql2, _conn))
-                    {
-                        cmd2.Parameters.AddWithValue("@id", cardID1);
-                        cmd2.Parameters.AddWithValue("@owner", username2);
-                        cmd2.ExecuteNonQuery();
-                    }
-
-                    var sql3 = "UPDATE card SET owner=@owner WHERE \"id\"=@id";
-                    using (var cmd2 = new NpgsqlCommand(sql2, _conn))
-                    {
-                        cmd2.Parameters.AddWithValue("@id", cardID2);
-                        cmd2.Parameters.AddWithValue("@owner", username1);
-                        cmd2.ExecuteNonQuery();
-                    }
-                    trans.Commit();
+                    return true;
                 }
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
 
         public bool Battle(User.User user1, User.User user2, string log)
         {
-            try
+            lock (_lock)
             {
-                _conn.Open();
-                using (var trans = _conn.BeginTransaction())
+                try
                 {
-                    var sql1 = "INSERT INTO battle (player1,player2,battlelog) VALUES (@player1,@player2,@battlelog)";
-                    using (var cmd = new NpgsqlCommand(sql1, _conn))
+                    _conn.Open();
+                    using (var trans = _conn.BeginTransaction())
                     {
-                        cmd.Parameters.AddWithValue("@player1", user1.Username);
-                        cmd.Parameters.AddWithValue("@player2", user2.Username);
-                        cmd.Parameters.AddWithValue("@battlelog", log);
-                        cmd.ExecuteNonQuery();
+                        var sql1 =
+                            "INSERT INTO battle (player1,player2,battlelog) VALUES (@player1,@player2,@battlelog)";
+                        using (var cmd = new NpgsqlCommand(sql1, _conn))
+                        {
+                            cmd.Parameters.AddWithValue("@player1", user1.Username);
+                            cmd.Parameters.AddWithValue("@player2", user2.Username);
+                            cmd.Parameters.AddWithValue("@battlelog", log);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        var sql2 =
+                            "UPDATE \"user\" SET \"elo\"=@elo,\"wins\"=@wins,\"losses\"=@losses,\"numGames\"=@numGames WHERE \"username\"=@user";
+                        using (var cmd = new NpgsqlCommand(sql2, _conn))
+                        {
+                            cmd.Parameters.AddWithValue("@elo", user1.Elo.Value);
+                            cmd.Parameters.AddWithValue("@wins", user1.Wins.Value);
+                            cmd.Parameters.AddWithValue("@losses", user1.Losses.Value);
+                            cmd.Parameters.AddWithValue("@numGames", user1.NumGames.Value);
+                            cmd.Parameters.AddWithValue("@user", user1.Username);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        var sql3 =
+                            "UPDATE \"user\" SET \"elo\"=@elo,\"wins\"=@wins,\"losses\"=@losses,\"numGames\"=@numGames WHERE \"username\"=@user";
+                        using (var cmd = new NpgsqlCommand(sql3, _conn))
+                        {
+                            cmd.Parameters.AddWithValue("@elo", user2.Elo.Value);
+                            cmd.Parameters.AddWithValue("@wins", user2.Wins.Value);
+                            cmd.Parameters.AddWithValue("@losses", user2.Losses.Value);
+                            cmd.Parameters.AddWithValue("@numGames", user2.NumGames.Value);
+                            cmd.Parameters.AddWithValue("@user", user2.Username);
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        trans.Commit();
                     }
 
-                    var sql2 = "UPDATE \"user\" SET \"elo\"=@elo,\"wins\"=@wins,\"losses\"=@losses,\"numGames\"=@numGames WHERE \"username\"=@user";
-                    using (var cmd = new NpgsqlCommand(sql2, _conn))
-                    {
-                        cmd.Parameters.AddWithValue("@elo", user1.Elo.Value);
-                        cmd.Parameters.AddWithValue("@wins", user1.Wins.Value);
-                        cmd.Parameters.AddWithValue("@losses", user1.Losses.Value);
-                        cmd.Parameters.AddWithValue("@numGames", user1.NumGames.Value);
-                        cmd.Parameters.AddWithValue("@user", user1.Username);
-                        cmd.ExecuteNonQuery();
-                    }
-
-                    var sql3 = "UPDATE \"user\" SET \"elo\"=@elo,\"wins\"=@wins,\"losses\"=@losses,\"numGames\"=@numGames WHERE \"username\"=@user";
-                    using (var cmd = new NpgsqlCommand(sql3, _conn))
-                    {
-                        cmd.Parameters.AddWithValue("@elo", user2.Elo.Value);
-                        cmd.Parameters.AddWithValue("@wins", user2.Wins.Value);
-                        cmd.Parameters.AddWithValue("@losses", user2.Losses.Value);
-                        cmd.Parameters.AddWithValue("@numGames", user2.NumGames.Value);
-                        cmd.Parameters.AddWithValue("@user", user2.Username);
-                        cmd.ExecuteNonQuery();
-                    }
-                    trans.Commit();
+                    return true;
                 }
-                return true;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("error: " + e.Message);
-                return false;
-            }
-            finally
-            {
-                _conn.Close();
+                catch (Exception e)
+                {
+                    Console.WriteLine("error: " + e.Message);
+                    return false;
+                }
+                finally
+                {
+                    _conn.Close();
+                }
             }
         }
     }

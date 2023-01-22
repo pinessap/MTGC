@@ -17,7 +17,6 @@ namespace MTCG.User
         internal User player1;
         internal User player2;
         private int roundCount = 0;
-        public bool hasStarted = false;
         private List<string> p1CardIDs;
         private List<string> p2CardIDs;
         private int boost = 0;              //if a player has only 1 card left -> gets 2x damage boost for one round (works only once in the entire battle), 1 = player 1, 2 = player 2
@@ -50,7 +49,7 @@ namespace MTCG.User
         }
 
         
-        public bool MoveCardFromTo(Collection fromDeck, Collection toDeck, string fromCardID) //move Card from one Deck to another 
+        private bool MoveCardFromTo(Collection fromDeck, Collection toDeck, string fromCardID) //move Card from one Deck to another 
         {
             Card fromCard = fromDeck.RemoveCard(fromCardID);    //remove card from first Deck
             if (fromCard != null)                               //check if successful
@@ -122,7 +121,6 @@ namespace MTCG.User
 
         internal int CardsBattle(Card card1, Card card2, int booster, bool critP1, bool critP2) //determine winner between two cards 
         {
-            Console.WriteLine("Card battle");
             bool pureMoFi = CheckPureMonsterFight(card1, card2);
             int specialFight = CheckSpecialties(card1.Name, card2.Name, boost);
 
@@ -134,7 +132,6 @@ namespace MTCG.User
                 if (booster == 1 && boostP1Used == false) 
                 {
                     dmgP1 = card1.Damage * 2;
-                    Console.WriteLine("boostdmg:" + dmgP1);
                     boostP1Used = true;
                 } 
                 else if (booster == 2 && boostP2Used == false)
@@ -173,6 +170,9 @@ namespace MTCG.User
                     dmgP2 *= 1.5;
                 }
 
+                Console.WriteLine("\nCalculated DMG P1: " + dmgP1);
+                Console.WriteLine("Calculated DMG P2: " + dmgP2);
+                Console.WriteLine();
 
                 if (dmgP1 > dmgP2)
                 {
@@ -217,15 +217,14 @@ namespace MTCG.User
 
         private bool getCrit()
         {
-            Random rand = new Random();
-            int randomValue = rand.Next(1, 101);
+            int randomValue = Helpers.RandomNumberGenerator.Next(1, 101);
+            //int randomValue = rand.Next(1, 101);
             bool has10PercentChance = randomValue < 11;
             return has10PercentChance;
         }
 
         public string StartBattle() //start battle between two players 
         {
-            hasStarted = true;
             Console.WriteLine("\n\n---------- START GAME ----------\n");
             string log = "---------- START GAME ----------\n";
 

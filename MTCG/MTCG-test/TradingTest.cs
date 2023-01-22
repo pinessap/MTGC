@@ -100,7 +100,7 @@ namespace MTCG_test
         [Test, Order(1)]
         public void CreateDeal()
         {
-            Assert.IsEmpty(server.GetTradings("John")); //empty because no deals available
+            Assert.IsEmpty(server.GetTradings()); //empty because no deals available
 
             mockDB.Setup(x => x.CreateTrade(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
                 It.IsAny<double>(), It.IsAny<string>())).Returns(true);
@@ -139,8 +139,8 @@ namespace MTCG_test
                 s => s.CreateTrade(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<double>(),
                     It.IsAny<string>()), Times.AtLeastOnce);
 
-            Assert.IsNotEmpty(server.GetTradings("John"));
-            Assert.IsNotEmpty(server.GetTradings("Thomas"));
+            Assert.IsNotEmpty(server.GetTradings());
+            Assert.IsNotEmpty(server.GetTradings());
             Assert.IsNotEmpty(server.tradingDeals);
         }
 
@@ -161,14 +161,14 @@ namespace MTCG_test
                             "    \"CardToTrade\": \"845f0dc7-37d0-426e-994e-43fc3ac83b00\"," + Environment.NewLine +
                             "    \"Type\": \"monster\"," + Environment.NewLine +
                             "    \"MinimumDamage\": 15.0" + Environment.NewLine +
-                            "  }" + Environment.NewLine + "]", server.GetTradings("John"));
+                            "  }" + Environment.NewLine + "]", server.GetTradings());
 
             Assert.AreEqual("[" + Environment.NewLine + "  {" + Environment.NewLine +
                             "    \"Id\": \"3fa85f64-5717-4562-b3fc-2c963f66afa6\"," + Environment.NewLine +
                             "    \"CardToTrade\": \"845f0dc7-37d0-426e-994e-43fc3ac83b00\"," + Environment.NewLine +
                             "    \"Type\": \"monster\"," + Environment.NewLine +
                             "    \"MinimumDamage\": 15.0" + Environment.NewLine +
-                            "  }" + Environment.NewLine + "]", server.GetTradings("Thomas"));
+                            "  }" + Environment.NewLine + "]", server.GetTradings());
             
             Assert.IsNotEmpty(server.tradingDeals);
         }
@@ -185,7 +185,7 @@ namespace MTCG_test
                                              "}"
             );
 
-            Assert.IsNotEmpty(server.GetTradings("John"));
+            Assert.IsNotEmpty(server.GetTradings());
 
             mockDB.Setup(x => x.DeleteTrade(It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
@@ -200,7 +200,7 @@ namespace MTCG_test
 
             mockDB.Verify(s => s.DeleteTrade(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
 
-            Assert.IsEmpty(server.GetTradings("John")); //empty because no deals available
+            Assert.IsEmpty(server.GetTradings()); //empty because no deals available
             Assert.IsEmpty(server.tradingDeals);
         }
 
@@ -216,8 +216,8 @@ namespace MTCG_test
                                              "}"
             );
 
-            Assert.IsNotEmpty(server.GetTradings("John"));
-            Assert.IsNotEmpty(server.GetTradings("Thomas"));
+            Assert.IsNotEmpty(server.GetTradings());
+            Assert.IsNotEmpty(server.GetTradings());
 
             mockDB.Setup(x => x.PerformTrade(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>())).Returns(true);
 
@@ -235,8 +235,8 @@ namespace MTCG_test
             Assert.True(server.users["Thomas"].Stack.cards.ContainsKey("845f0dc7-37d0-426e-994e-43fc3ac83b00"));
             Assert.False(server.users["John"].Stack.cards.ContainsKey("845f0dc7-37d0-426e-994e-43fc3ac83b00"));
 
-            Assert.IsEmpty(server.GetTradings("John"));
-            Assert.IsEmpty(server.GetTradings("Thomas"));
+            Assert.IsEmpty(server.GetTradings());
+            Assert.IsEmpty(server.GetTradings());
             Assert.IsEmpty(server.tradingDeals);
         }
     }

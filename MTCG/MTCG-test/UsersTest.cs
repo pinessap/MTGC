@@ -24,18 +24,7 @@ namespace MTCG_test
         public void Setup()
         {
             mockDB = new Mock<IDatabase>();
-            /*mockDB.Setup(x => x.LoadUsers()).Verifiable();
-            mockDB.Setup(x => x.LoadCardIDs()).Verifiable();
-            mockDB.Setup(x => x.LoadPackages()).Verifiable();
-            mockDB.Setup(x => x.LoadCards()).Verifiable();
-            mockDB.Setup(x => x.LoadTradings(It.IsAny<ConcurrentDictionary<string, Card>>())).Verifiable();*/
-            
             server = new ServerMethods(true,mockDB.Object);
-            /*mockDB.Verify(s => s.LoadUsers(), Times.Once);
-            mockDB.Verify(s => s.LoadCardIDs(), Times.Once);
-            mockDB.Verify(s => s.LoadPackages(), Times.Once);
-            mockDB.Verify(s => s.LoadCards(), Times.Once);
-            mockDB.Verify(s => s.LoadTradings(It.IsAny<ConcurrentDictionary<string, Card>>()), Times.Once);*/
         }
 
         [Test, Order(1)]
@@ -124,9 +113,9 @@ namespace MTCG_test
                             "  \"Bio\": \"do not disturb\"," + Environment.NewLine +
                             "  \"Image\": \":/\"" + Environment.NewLine +
                             "}",
-                server.GetUserData(username, token));
+                server.GetUserData(username));
             
-            Assert.AreEqual(string.Empty, server.GetUserData("Martin", "Martin-mtcgToken"));
+            Assert.AreEqual(string.Empty, server.GetUserData("Martin"));
         }
     }
 }

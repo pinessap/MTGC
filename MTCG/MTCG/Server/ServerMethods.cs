@@ -14,25 +14,21 @@ using System.Diagnostics;
 using System.Xml.Linq;
 using MTCG.DB;
 
+[assembly: InternalsVisibleTo("MTCG-test")]
+
 namespace MTCG.Server
 {
     public class ServerMethods
     {
-        public IDatabase DB;
-        public ConcurrentDictionary<string, User.User> users;                      // Dictionary of all registered Users 
+        private IDatabase DB;
+        internal ConcurrentDictionary<string, User.User> users;                      // Dictionary of all registered Users 
         private ConcurrentDictionary<string, Cards.Card> cards;
-        //private List<string> CardIDs;
-        public ConcurrentBag<string> CardIDs; // List of all Card IDs
-        public ConcurrentBag<Collection> packages;                                 // Bag of all packages (package = Collection of Cards)
-        public ConcurrentDictionary<string, User.Trading> tradingDeals;            // Dictionary of all Trading Deals
+        internal ConcurrentBag<string> CardIDs; // List of all Card IDs
+        internal ConcurrentBag<Collection> packages;                                 // Bag of all packages (package = Collection of Cards)
+        internal ConcurrentDictionary<string, User.Trading> tradingDeals;            // Dictionary of all Trading Deals
         private ConcurrentQueue<string> battleQueue;                                // Queue of Usernames for Battle
 
-        //private static readonly ServerMethods serverData = new ServerMethods();     // Instance of ServerMethods
-       // public static ServerMethods ServerData                                      // Getter of ServerMethods Instance
-        //{
-         //   get { return serverData; }
-        //}
-        public ServerMethods(bool test, IDatabase db)                                                     // Constructor
+        public ServerMethods(bool test, IDatabase db) //used in unit tests                                               
         {
             this.DB = db;
             users = new ConcurrentDictionary<string, User.User>();
@@ -42,33 +38,34 @@ namespace MTCG.Server
             battleQueue = new ConcurrentQueue<string>();
         }
 
-        public ServerMethods(IDatabase db)                                                     // Constructor
+        public ServerMethods(IDatabase db) // Constructor
         {
             this.DB = db;
-            Console.WriteLine("\nSERVER METHODS\n");
+            
             try
             {
-                //users = new ConcurrentDictionary<string, User.User>();
+                //load data from database 
+                Console.WriteLine("\nLOADING DATA FROM DATABASE:");
+
                 users = new ConcurrentDictionary<string, User.User>(DB.LoadUsers().ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value));
                 
-                //CardIDs = new ConcurrentBag<string>();
                 CardIDs = new ConcurrentBag<string>(DB.LoadCardIDs());
                 
-                //packages = new ConcurrentBag<Collection>();
                 packages = new ConcurrentBag<Collection>(DB.LoadPackages());
 
                 cards = new ConcurrentDictionary<string, Cards.Card>(DB.LoadCards().ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value));
 
-                //tradingDeals = new ConcurrentDictionary<string, Trading>();
                 tradingDeals = new ConcurrentDictionary<string, Trading>(DB.LoadTradings(cards).ToDictionary(
                     kvp => kvp.Key,
                     kvp => kvp.Value));
 
                 battleQueue = new ConcurrentQueue<string>();
+
+                Console.WriteLine();
             }
             catch (Exception e)
             {
@@ -77,14 +74,13 @@ namespace MTCG.Server
 
         }
 
-        public bool RegisterUser(string jsonBody) // register new User 
+        public bool RegisterUser(string jsonBody) // register new User + db 
         {
             try
             {
-                Console.WriteLine("register\n");
                 User.User newUser = JsonConvert.DeserializeObject<User.User>(jsonBody); //convert json body into User
-                Console.WriteLine("Username:" + newUser.Username);
-                Console.WriteLine("Password:" + newUser.Password);
+                //Console.WriteLine("Username:" + newUser.Username);
+                //Console.WriteLine("Password:" + newUser.Password);
                 if (users.TryAdd(newUser.Username, newUser)) //add user to users dictionary
                 {
                     return DB.CreateUser(newUser);
@@ -94,6 +90,7 @@ namespace MTCG.Server
             }
             catch (Exception e)
             {
+                Console.WriteLine("error: " + e);
                 return false;
             }
         }
@@ -111,10 +108,9 @@ namespace MTCG.Server
                 return JsonConvert.SerializeObject(jsonObject, Formatting.Indented); //convert into json string
                 //return token;
             }
-            Console.WriteLine("test token2");
             return string.Empty;
         }
-        public string GetUserData(string username, string token) // get own User Data 
+        public string GetUserData(string username) // get own User Data 
         {
             try
             {
@@ -124,20 +120,21 @@ namespace MTCG.Server
                 };
                 return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
+                Console.WriteLine("error: " + e);
                 return string.Empty;
             }
             
         }
-        public bool UpdateUserData(string username, string jsonBody) // update own User Data 
+        public bool UpdateUserData(string username, string jsonBody) // update own User Data + db
         {
             try
             {
                 JObject userData = JObject.Parse(jsonBody);               //parse json body to json object
-                users[username].Name = userData.GetValue("Name").Value<string>(); //set variable to value from json body
-                users[username].Bio = userData.GetValue("Bio").Value<string>();
-                users[username].Image = userData.GetValue("Image").Value<string>();
+                users[username].Name = userData.GetValue("Name")?.Value<string>() ?? ""; //set variable to value from json body (or empty string if not specified)
+                users[username].Bio = userData.GetValue("Bio")?.Value<string>() ?? "";
+                users[username].Image = userData.GetValue("Image")?.Value<string>() ?? "";
                 return DB.UpdateUser(username, users[username].Name, users[username].Bio, users[username].Image);
             }
             catch (Exception e)
@@ -162,30 +159,17 @@ namespace MTCG.Server
             }
             catch (Exception e)
             {
+                Console.WriteLine("error: " + e);
                 return string.Empty;
             }
         }
-        public string GetScoreboard() //get Object of Scoreboard (change to Array?) 
+        public string GetScoreboard() //get Array of Scoreboard 
         {
             try
             {
-                /*JObject jsonObject = JObject.FromObject(new
-                {
-                    Scoreboard = (from entry in users
-                        orderby entry.Value.Elo ascending
-                            select new
-                            {
-                                Name = entry.Value.Username,
-                                Elo = entry.Value.Elo,
-                                Wins = entry.Value.Wins,
-                                Losses = entry.Value.Losses
-                            })
-                });
-                return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);*/
-
                 JArray scoresArray = JArray.FromObject( //create json array from users dictionary and order by elo
                     from entry in users
-                    orderby entry.Value.Elo ascending
+                    orderby entry.Value.Elo descending
                     select new
                     {
                         Name = entry.Value.Username,
@@ -202,7 +186,7 @@ namespace MTCG.Server
                 return string.Empty;
             }
         }
-        public bool AddPackage(string jsonBody) // Create Packages 
+        public bool AddPackage(string jsonBody) // Create Packages + db 
         {
             try
             {
@@ -246,16 +230,21 @@ namespace MTCG.Server
                 return true;
             }
         }
-        public int BuyPackage(string username) //buy a Package with Coins 
+        public int BuyPackage(string username) //buy a Package with Coins + db
         {
-            if (packages.Count == 0) //check if packages available to buy
+            if (!users.ContainsKey(username))
             {
-                return 0;
+                return -2;
             }
 
             if (users[username].Coins < 5) //check if user has enough coins
             {
                 return -1;
+            }
+
+            if (packages.Count == 0) //check if packages available to buy
+            {
+                return 0;
             }
 
             bool tmp = packages.TryTake(out Collection result); //take package out of packages bag
@@ -276,22 +265,10 @@ namespace MTCG.Server
             }
             return -2;
         }
-        public string GetStack(string username) // get Object of Stack (change to Array?) 
+        public string GetStack(string username) // get Array of Stack 
         {
             try
             {
-                /*JObject jsonObject = JObject.FromObject(new
-                {
-                    Stack = (from entry in users[username].Stack.cards
-                        select new
-                        {
-                            Id = entry.Value.Id,
-                            Name = entry.Value.Name,
-                            Damage = entry.Value.Damage,
-                        })
-                });
-                return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);*/
-
                 JArray stackArray = JArray.FromObject( //create json array from users stack (= collection) 
                     from entry in users[username].Stack.cards
                     select new
@@ -308,9 +285,8 @@ namespace MTCG.Server
                 return string.Empty;
             }
         }
-        public string GetDeck(string username, bool json = true) // get Object of Deck (change to Array?) 
+        public string GetDeck(string username, bool json = true) // get Array of Deck
         {
-            int i = 0;
             if (users[username].Deck.cards.Count() == 0)
             {
                 return string.Empty;
@@ -328,18 +304,6 @@ namespace MTCG.Server
 
             try
             {
-                /*JObject jsonObject = JObject.FromObject(new
-                {
-                    Deck = (from entry in users[username].Deck.cards
-                        select new
-                        {
-                            Id = entry.Value.Id,
-                            Name = entry.Value.Name,
-                            Damage = entry.Value.Damage,
-                        })
-                });
-                return JsonConvert.SerializeObject(jsonObject, Formatting.Indented);*/
-
                 JArray deckArray = JArray.FromObject( //create json array from users stack (= collection) 
                     from entry in users[username].Deck.cards
                     select new
@@ -355,9 +319,8 @@ namespace MTCG.Server
                 Console.WriteLine("error: " + e.Message);
                 return string.Empty;
             }
-            return string.Empty;
         }
-        public int ConfigureDeck(string username, string jsonBody) // put together a Deck 
+        public int ConfigureDeck(string username, string jsonBody) // put together a Deck + db
         {
             try
             {
@@ -370,11 +333,10 @@ namespace MTCG.Server
 
                 foreach (string cardID in array)
                 {
-                    Console.WriteLine("card check\n");
                     if (!(users[username].Stack.cards.ContainsKey(cardID) || //check whether user owns card
                           users[username].Deck.cards.ContainsKey(cardID)))
                     {
-                        Console.WriteLine(cardID);
+                        //Console.WriteLine(cardID);
                         return -1;
                     }
                 }
@@ -407,8 +369,6 @@ namespace MTCG.Server
                     DB.AddDeck(username, cardID);
                 }
                 
-                
-
                 return 0;
 
             } 
@@ -418,9 +378,8 @@ namespace MTCG.Server
                 return -2;
             }
 
-            return -2;
         }
-        public string GetTradings(string username) // get Array of all Trading Deals 
+        public string GetTradings() // get Array of all Trading Deals 
         {
             if (tradingDeals.Count() == 0) //check if there are any trading deals
             {
@@ -446,11 +405,10 @@ namespace MTCG.Server
                 return string.Empty;
             }
         }
-        public int CreateTradingDeal(string username, string jsonBody) // create Trading Deal 
+        public int CreateTradingDeal(string username, string jsonBody) // create Trading Deal + db
         {
             try
             {
-                Console.WriteLine("TRADETEDT");
                 JObject jsonObject = JObject.Parse(jsonBody);
 
                 string id = jsonObject.GetValue("Id").Value<string>(); //get id of trading deal
@@ -498,7 +456,7 @@ namespace MTCG.Server
                 return -3;
             }
         }
-        public int DeleteTradingDeal(string username, string tradeID) // delete Trading Deal 
+        public int DeleteTradingDeal(string username, string tradeID) // delete Trading Deal + db
         {
             try
             {
@@ -533,7 +491,7 @@ namespace MTCG.Server
                 return -3;
             }
         }
-        public int TradeCard(string username, string tradeID, string jsonBody) // make a Trade 
+        public int TradeCard(string username, string tradeID, string jsonBody) // make a Trade + db
         {
             try
             {
@@ -631,7 +589,7 @@ namespace MTCG.Server
             User.User user = users[username]; //get user from users dictionary
             return user;
         }
-        public string QueueBattle(string username) // queue for Battle (and start Battle if there is an Opponent) 
+        public string QueueBattle(string username) // queue for Battle (and start Battle if there is an Opponent) + db
         {
             string log = string.Empty;
             battleQueue.Enqueue(username); //add username to queue
@@ -661,9 +619,10 @@ namespace MTCG.Server
                 {
                     getUser(uname1).latestBattleLog = string.Empty;
                     getUser(uname2).latestBattleLog = string.Empty;
-                    Console.WriteLine("username1: "+uname1);
+
                     Battle battle = new Battle(getUser(uname1),getUser(uname2)); //initialize battle with the 2 users
                     log = battle.StartBattle(); //start battle
+
                     getUser(uname1).latestBattleLog = log;
                     getUser(uname2).latestBattleLog = log;
                     DB.Battle(getUser(uname1), getUser(uname2), log);

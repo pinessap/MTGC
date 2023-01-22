@@ -41,9 +41,9 @@ namespace MTCG.Cards
             return false;
         }
 
-        public Card RemoveCard(string id) //remove card from dictionary
+        public Card? RemoveCard(string id) //remove card from dictionary
         {
-            if (cards.TryRemove(id, out Card card))
+            if (cards.TryRemove(id, out var card))
             {
                 return card;
             }

@@ -10,6 +10,7 @@ using MTCG.Cards;
 using MTCG.User;
 using NUnit.Framework.Internal;
 using System.Numerics;
+using System.Xml.Linq;
 
 namespace MTCG_test
 {
@@ -157,8 +158,8 @@ namespace MTCG_test
         {
             server.users["John"].Elo += 3;
             Assert.AreEqual(
-                "[\r\n  {\r\n    \"Name\": \"Thomas\",\r\n    \"Elo\": 100,\r\n    \"Wins\": 0,\r\n    \"Losses\": 0,\r\n    \"WinRatio\": 0\r\n  }," +
-                "\r\n  {\r\n    \"Name\": \"John\",\r\n    \"Elo\": 103,\r\n    \"Wins\": 0,\r\n    \"Losses\": 0,\r\n    \"WinRatio\": 0\r\n  }\r\n]",
+                "[\r\n  {\r\n    \"Name\": \"John\",\r\n    \"Elo\": 103,\r\n    \"Wins\": 0,\r\n    \"Losses\": 0,\r\n    \"WinRatio\": 0\r\n  }," +
+                "\r\n  {\r\n    \"Name\": \"Thomas\",\r\n    \"Elo\": 100,\r\n    \"Wins\": 0,\r\n    \"Losses\": 0,\r\n    \"WinRatio\": 0\r\n  }\r\n]",
                 server.GetScoreboard());
         }
 
@@ -201,7 +202,7 @@ namespace MTCG_test
             Assert.AreEqual(86, Thomas.Elo);
         }
 
-        [Test, Order(3)]
+        [Test, Order(4)]
         public void CheckPureMonster()
         {
             Card moCard1 = server.users["John"].Deck.cards["845f0dc7-37d0-426e-994e-43fc3ac83b01"];
@@ -217,7 +218,7 @@ namespace MTCG_test
             Assert.False(battle.CheckPureMonsterFight(speCard2, speCard1));
         }
 
-        [Test, Order(4)]
+        [Test, Order(5)]
         public void CheckSpecialities()
         {
             Assert.AreEqual(2, battle.CheckSpecialties("WaterGoblin", "Dragon", 0));
@@ -246,7 +247,7 @@ namespace MTCG_test
             Assert.AreEqual(2, battle.CheckSpecialties("Dragon", "FireElf", 2));
         }
 
-        [Test, Order(5)]
+        [Test, Order(6)]
         public void CheckCardsBattle() //wihout critical hit
         {
             Card moCard1 = server.users["John"].Deck.cards["845f0dc7-37d0-426e-994e-43fc3ac83b01"]; //Ork 40
@@ -289,7 +290,7 @@ namespace MTCG_test
             Assert.AreEqual(0, battle.CardsBattle(moCard1, ork2Card, 1, false, false)); //boost already used -> doesnt work
         }
 
-        [Test, Order(6)]
+        [Test, Order(7)]
         public void CheckCrit()
         {
             Card moCard1 = server.users["John"].Deck.cards["845f0dc7-37d0-426e-994e-43fc3ac83b01"]; //Ork 40
@@ -368,8 +369,7 @@ namespace MTCG_test
             
         }
 
-
-        [Test, Order(8)]
+        [Test, Order(9)]
         public void CheckBattle()
         {
 

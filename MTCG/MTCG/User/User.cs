@@ -23,7 +23,6 @@ namespace MTCG.User
         public Collection Stack { get; set; }
         public Collection Deck { get; set; }
 
-        public bool isBattling = false;
         public string latestBattleLog = string.Empty;
 
         public User() // constructor
@@ -104,11 +103,11 @@ namespace MTCG.User
                 return 0;
             }
             int K = GetKValue(playerElo, opponentElo);
-            Console.WriteLine("K:" + K);
-            Console.WriteLine("player: " + playerElo);
-            Console.WriteLine("opponent: " + opponentElo);
+            //Console.WriteLine("K:" + K);
+            //Console.WriteLine("player: " + playerElo);
+            //Console.WriteLine("opponent: " + opponentElo);
             double expectedScore = 1 / (1 + Math.Pow(10, (opponentElo.Value - playerElo.Value) / 400.0));
-            Console.WriteLine("expected:" + expectedScore);
+            //Console.WriteLine("expected:" + expectedScore);
             if (isDraw)
             {
                 return playerElo.Value + (int)(K * (0.5 - expectedScore));
@@ -145,7 +144,8 @@ namespace MTCG.User
         public Card ChooseRndCard() //choose random card from Deck 
         {
             Random random = new Random();
-            int index = random.Next(Deck.cards.Count());
+            int index = Helpers.RandomNumberGenerator.Next(Deck.cards.Count());
+            //int index = random.Next(Deck.cards.Count());
             Card card = Deck.cards.Values.ElementAt(index);
             return card;
         }

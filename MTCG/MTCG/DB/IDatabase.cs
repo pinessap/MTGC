@@ -17,15 +17,12 @@ namespace MTCG.DB
         public ConcurrentBag<Collection> LoadPackages();
         public ConcurrentDictionary<string, Cards.Card> LoadCards();
         public ConcurrentDictionary<string, Trading> LoadTradings(ConcurrentDictionary<string, Cards.Card> cards);
+
+
         public bool CreateUser(User.User user);
         public bool UpdateUser(string username, string name, string bio, string image);
-
         public bool CreatePackage(Collection package);
-
         public bool BuyPackage(string username, Collection package);
-        public bool ChangeCardOwnerPackageID(string username, string packID);
-        public bool RemovePackage(string packID);
-        public bool ChangeCoins(string username);
         public bool RemoveDeck(string username);
         public bool AddDeck(string username, string cardID);
         public bool CreateTrade(string tradeID, string cardID, string type, double damage, string username);

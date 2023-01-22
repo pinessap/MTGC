@@ -11,9 +11,9 @@ namespace MTCG.Server
 {
     public class Response
     {
-        public string Body { get; private set; }
-        public string Status { get; private set; }
-        public Dictionary<string, string> Headers { get; private set; }
+        private string Body { get; }
+        private string Status { get; }
+        private Dictionary<string, string> Headers { get; }
 
         private Response(string status, string contentType, string body) // Constructor (set status, body, headers of response) 
         {
@@ -74,8 +74,8 @@ namespace MTCG.Server
                            // Console.WriteLine("username retrieved: " + username);
                             if (!string.IsNullOrEmpty(GetToken(request.Headers)) && CheckToken(GetToken(request.Headers),username)) //check if token matches or is admin
                             {
-                                string body = serverData.GetUserData(username, GetToken(request.Headers)); //get user data
-                                if (body != null)
+                                string body = serverData.GetUserData(username); //get user data
+                                if (!string.IsNullOrEmpty(body))
                                 {
                                     return new Response("200 OK", "application/json", body + "\n");
                                 }
@@ -98,12 +98,17 @@ namespace MTCG.Server
                     //-------------------------------------- retrieves stats for individual user --------------------------------------
                     else if (request.Path == "/stats")
                     {
-                        if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
+                        string username = GetUsernameFromToken(GetToken(request.Headers));
+                        if (!string.IsNullOrEmpty(username))
                         {
-                            string body = serverData.GetUserStats(GetUsernameFromToken(GetToken(request.Headers))); // get stats
-                            if (body != null)
+                            string body = serverData.GetUserStats(username); // get stats
+                            if (!string.IsNullOrEmpty(body))
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
+                            }
+                            else
+                            {
+                                return AccessTokenInvalid();
                             }
                         }
                         else
@@ -117,7 +122,7 @@ namespace MTCG.Server
                         if (!string.IsNullOrEmpty(GetToken(request.Headers)))
                         {
                             string body = serverData.GetScoreboard(); //get scoreboard
-                            if (body != null)
+                            if (!string.IsNullOrEmpty(body))
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
                             }
@@ -133,7 +138,7 @@ namespace MTCG.Server
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
                             string body = serverData.GetStack(GetUsernameFromToken(GetToken(request.Headers))); //get stack
-                            if (body != string.Empty && body != null)
+                            if (!string.IsNullOrEmpty(body))
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
                             }
@@ -163,7 +168,7 @@ namespace MTCG.Server
                             {
                                 body = serverData.GetDeck(GetUsernameFromToken(GetToken(request.Headers)), true);  //get Deck in json format
                             }
-                            if (body != string.Empty && body != null)
+                            if (!string.IsNullOrEmpty(body))
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
                             }
@@ -183,9 +188,8 @@ namespace MTCG.Server
                     {
                         if (!string.IsNullOrEmpty(GetUsernameFromToken(GetToken(request.Headers))))
                         {
-                            string body;
-                            body = serverData.GetTradings(GetUsernameFromToken(GetToken(request.Headers))); //get trading deals
-                            if (body != string.Empty && body != null)
+                            string body = serverData.GetTradings(); //get trading deals
+                            if (!string.IsNullOrEmpty(body))
                             {
                                 return new Response("200 OK", "application/json", body + "\n");
                             }
@@ -468,7 +472,7 @@ namespace MTCG.Server
         {
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("HTTP/1.1 " + Status);
-            foreach (KeyValuePair<string, string> header in this.Headers)
+            foreach (KeyValuePair<string, string> header in Headers)
             {
                 sb.AppendLine(header.Key + ":" + header.Value);
             }
@@ -478,6 +482,8 @@ namespace MTCG.Server
             return sb.ToString();
         }
 
+
+        //---- helper functions ----
         private static string GetToken(Dictionary<string, string> headers) // get token from request headers 
         {
             //Format: --header "Authorization: Basic kienboec-mtcgToken"
@@ -516,7 +522,6 @@ namespace MTCG.Server
             }
 
         }
-
 
     }
 }
