@@ -31,5 +31,5 @@ https://github.com/pinessap/MTGC
 | 19/01/23 | 7        | added rest of unit tests (battle, trading, package, cards)                                           |
 | 20/01/23 | 4.5      | added extra feautures: critical hit in battle, higher sophisticated elo calculation, win ratio       |
 | 21/01/23 | 5.5      | tested everything, fixed small bugs                                                                  |
-| 22/01/23 |       | adeed documentation                                                                  |
+| 22/01/23 |       | added documentation                                                                  |
 |  |       | TOTAL TIME                                                              |
