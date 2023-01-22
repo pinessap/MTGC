@@ -4,6 +4,9 @@
 https://github.com/pinessap/MTGC
 
 ## Design
+![architecture](https://user-images.githubusercontent.com/1788353/213922176-4c2dd8fb-e845-4aea-b04c-7ad5d8e69df3.png)
+![ClassDiagram](https://user-images.githubusercontent.com/1788353/213922194-77d28369-4d39-43a8-b5f6-5c3cd3971c79.png)
+![db](https://user-images.githubusercontent.com/1788353/213922204-5f95b864-c92d-4a15-b044-9a8605d7fb64.png)
 
 ## Testing
 ### Integration Test 
