@@ -1,4 +1,4 @@
-# MTGC | Ines Petrusic
+# MTGC | Ines Petrušić
 
 ## Git Link
 
