@@ -20,16 +20,18 @@ Für die Integrations Tests wurde das vorgebene curl-Skript genommen und angepas
 Im Prinzip habe ich hier versucht für alle wichtigen Klassen, welche zum eigentlichen MonsterTradingCardGame gehören, entsprechende Unit Tests zu erstellen. Insgesamt habe ich 23 Tests, bei denen ich Moq verwende, um die Database-Class zu mocken. So wird sicher gegangen, dass mein DatabaseHandler also nicht versucht unabsichtlich mit meiner Datenbank zu interagieren. So kann ich auch einrichten, dass die entsprechenden Database-Methods immer true returnen und nicht meine Unit Tests zu ServerMethods-Methoden verfälschen.
 
 ## Lessons Learned
-Ein großer Punkt den ich aus dem Projekt mitnehme ist, dass am Anfang eine gute Planung der Gesamtarchitektur viel Zeit im Nachhinein beim Implementieren sparen kann. Ich denke bei einer ausführlicheren Planung hätte ich später weniger Änderungen durchführen müssen. 
+Ein großer Punkt den ich aus dem Projekt mitnehme ist, dass am Anfang eine gute Planung der Gesamtarchitektur viel Zeit im Nachhinein beim Implementieren sparen kann. So ist von Anfang an mehr klar welche Komponenten sich um was kümmern müssen und Abhängigkeiten sind so ebenfalls klarer. Ich denke bei einer ausführlicheren Planung hätte ich später weniger Änderungen durchführen müssen. 
 
-Es bewährt sich auch im Vorhinein sich genügend über verwendete libraries, frameworks, etc. zu informieren. So hab ich z.B. erst im Nachhinein gelernt, dass Npgsql einen connection pool verwendet und sich quasi selbst um diesen kümmert. Also hätte ich alternativ auch pro thread eine neue Connection erstellen können. In Sachen Performance und Scalability bringen Connection Pools oft einen Vorteil.
+Es bewährt sich auch im Vorhinein sich genügend über verwendete libraries, frameworks, etc. zu informieren. Damit kommt man eventuell nicht erst wenn es zu spät ist drauf, wie man Problemstellungen am besten umsetzen könnte. So hab ich z.B. erst im Nachhinein gelernt, dass Npgsql einen connection pool verwendet und sich quasi selbst um diesen kümmert. Also hätte ich alternativ auch pro thread eine neue Connection erstellen können. In Sachen Performance und Scalability bringen Connection Pools oft einen Vorteil.
 
-Durch das Projekt habe ich ebenfalls gelernt wie und wofür man Mocking verwendet und wie diese in Unit Tests sich als sehr hilfreich herausstellen können. So kann man z.B. verifizieren ob bestimmte Methoden aufgerufen wurden ohne irgendwelche nicht relevanten Werte oder Werte, auf welche nicht einfach zugegriffen werden können vergleichen zu müssen. 
+Durch das Projekt habe ich ebenfalls gelernt wie und wofür man Mocking verwendet und wie diese in Unit Tests sich als sehr hilfreich herausstellen können. So kann man z.B. verifizieren ob bestimmte Methoden aufgerufen wurden ohne irgendwelche nicht relevanten Werte oder Werte, auf welche nicht einfach zugegriffen werden können vergleichen zu müssen. Es erweist sich auch als Vorteil bei Dingen, die viel zu aufwändig wären zum testen, z.B. Database.
+
+Ansonsten wurden Ketntnisse zu statischen Methoden/Klassen, Verwendung von Postman, Parsen von JSON, Verwendung von Threads, ... aufgefrischt. 
 
 ## Additional Features
 ### Unique Feature
 #### Booster
-Als mandatory unique feaature habe ich im Battle einen Booster implementiert. Pro Battle kann dabei jeder der beiden Spieler nur einmal diesen Booster bekommen. Und zwar bekommt ein Spieler für eine Runde einen x2 Damage Booster, sobald dieser nur noch eine Card im Deck hat. Somit erhöht sich seine Chance, noch länger im Battle zu bleiben und eventuell dieses noch umzudrehen. Zu Beachten ist hier, dass bei einem Booster die Specialities (z.B. Dragon vs Goblin) außer Kraft treten, nicht aber die element effectiveness. Somit ist die Chance, trotzdem noch mit dem Booster zu verlieren immer noch sehr hoch, wenn du z.B. mit deiner Feuer-Card gegen eine Wasser-Card antreten musst. Der Booster wird nämlich am Anfang berechnet (siehe CardsBattle-Method in Battle-Class).
+Als mandatory unique feature habe ich im Battle einen Booster implementiert. Pro Battle kann dabei jeder der beiden Spieler nur einmal diesen Booster bekommen. Und zwar bekommt ein Spieler für eine Runde einen x2 Damage Booster, sobald dieser nur noch eine Card im Deck hat. Somit erhöht sich seine Chance, noch länger im Battle zu bleiben und eventuell dieses noch umzudrehen. Zu Beachten ist hier, dass bei einem Booster die Specialities (z.B. Dragon vs Goblin) außer Kraft treten, nicht aber die element effectiveness. Somit ist die Chance, trotzdem noch mit dem Booster zu verlieren immer noch sehr hoch, wenn du z.B. mit deiner Feuer-Card gegen eine Wasser-Card antreten musst. Der Booster wird nämlich am Anfang berechnet (siehe CardsBattle-Method in Battle-Class).
 
 ### Optional Feautures
 #### Critical Hit
@@ -75,7 +77,7 @@ _______
 | 19/01/23 | 7        | added rest of unit tests (battle, trading, package, cards)                                           |
 | 20/01/23 | 4.5      | added extra feautures: critical hit in battle, higher sophisticated elo calculation, win ratio       |
 | 21/01/23 | 5.5      | tested everything, fixed small bugs                                                                  |
-| 22/01/23 |       | added documentation                                                                  |
+| 22/01/23 |   3    | added documentation                                                                  |
 |  |       | TOTAL TIME                                                              |
 _______
 
